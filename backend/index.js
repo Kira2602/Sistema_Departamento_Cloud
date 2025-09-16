@@ -9,6 +9,12 @@ app.get("/", (req, res) => {
   res.send("Backend Node.js funcionando 🚀");
 });
 
+// Auth routes
+app.use("/auth", require("./src/routes.auth"));
+
+// Cloud routes
+app.use("/cloud", require("./src/routes.cloud"));
+
 app.listen(3000, () => {
   console.log("Servidor corriendo en http://localhost:3000");
 });

@@ -13,6 +13,7 @@ html, body, #app {
   margin: 0;
   padding: 0;
   font-family: "Poppins", "Montserrat", "Bellota", sans-serif;
-  background-color: #f9f9f9; 
+  background: #fff;  /* mismo fondo que tu login */
 }
+
 </style>

@@ -1,11 +1,19 @@
-<script setup></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <RouterView />
 </template>
 
-<style scoped></style>
+<script setup>
+
+</script>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&family=Bellota:wght@300;400;700&display=swap");
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Poppins", "Montserrat", "Bellota", sans-serif;
+  background: #fff;  /* mismo fondo que tu login */
+}
+
+</style>

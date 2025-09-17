@@ -28,5 +28,26 @@ npm install
 npm run dev
 ```
 
+3. Librerias necesarias para el front
+```bash
+cd frontend 
+```
+```bash
+npm install -D sass-embedded
+```
+```bash
+npm install sweetalert2
+```
+```bash
+npm install @lottiefiles/lottie-player
+```
+```bash
+npm i swiper
+```
+
+
+
+   
+
 
 

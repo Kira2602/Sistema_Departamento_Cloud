@@ -61,9 +61,24 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="loading">
+              <td colspan="13" style="text-align: center; padding: 40px;">
+                <div style="color: #3c507d; font-size: 16px;">
+                  🔄 Cargando recursos...
+                </div>
+              </td>
+            </tr>
+            <tr v-else-if="recursos.length === 0">
+              <td colspan="13" style="text-align: center; padding: 40px;">
+                <div style="color: #666; font-size: 16px;">
+                  No hay recursos disponibles. ¡Agrega el primero!
+                </div>
+              </td>
+            </tr>
             <tr
+              v-else
               v-for="(r, idx) in recursos"
-              :key="idx"
+              :key="r.id || idx"
               :class="{ selected: selectedIndex === idx }"
               @click="selectedIndex = idx"
             >
@@ -88,7 +103,8 @@
                 <td><input class="cell-input" v-model="editedRow.region" /></td>
                 <td>
                   <select class="cell-input" v-model="editedRow.estado">
-                    <option>Activo</option><option>Detenido</option><option>Eliminado</option>
+                    <option>Activo</option>
+                    <option>Inactivo</option>
                   </select>
                 </td>
                 <td><input class="cell-input" v-model="editedRow.responsable" /></td>
@@ -147,6 +163,9 @@
 import Swal from 'sweetalert2'
 import NavbarComponent from '@/components/NavbarComponent.vue'
 import AgregarPopup from '@/components/AgregarPopup.vue'
+import { cloudService } from '@/services/cloudService.js'
+import { authService } from '@/services/authService.js'
+import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
 export default {
   name: 'ABMCloud',
@@ -157,34 +176,113 @@ export default {
       selectedIndex: null,
       editMode: false,
       editedRow: null,
-      recursos: [
-        { codigo: 'CR-001', proveedor: 'AWS', servicio: 'EC2', idRecurso: 'i-0abc123def456', region: 'us-east-1', estado: 'Activo', responsable: 'Juan Pérez', costo: '$120', fechaInicio: '2024-01-10', fechaFin: '2025-01-10', garantia: '1 año', notas: 'Servidor principal de pruebas' },
-        { codigo: 'CR-002', proveedor: 'GCP', servicio: 'BigQuery', idRecurso: 'bq-789xyz', region: 'us-central1', estado: 'Activo', responsable: 'María López', costo: '$80', fechaInicio: '2023-07-01', fechaFin: '2024-07-01', garantia: '6 meses', notas: 'Dataset de analítica' },
-        { codigo: 'CR-003', proveedor: 'Azure', servicio: 'VM', idRecurso: 'vm-123abc', region: 'eastus', estado: 'Detenido', responsable: 'Carlos Gómez', costo: '$50', fechaInicio: '2024-03-15', fechaFin: '2025-03-15', garantia: '2 años', notas: 'Servidor temporal' }
-      ]
+      recursos: [],
+      loading: false,
+      user: null
     }
   },
-  mounted() {
+  async mounted() {
     // Cargar el web-component de dotLottie si no existe aún
     if (!customElements.get('dotlottie-player')) {
       const s = document.createElement('script')
       s.src = 'https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js'
       document.head.appendChild(s)
     }
+
+    // Verificar autenticación
+    if (!authService.isAuthenticated()) {
+      await this.$router.push('/login')
+      return
+    }
+
+    this.user = authService.getUser()
+    await this.loadRecursos()
   },
   methods: {
-    onAgregarRecurso(nuevo) {
-      this.recursos.unshift(nuevo)
-      this.isAgregarOpen = false
-      Swal.fire({
-        icon: 'success',
-        title: 'Recurso registrado',
-        text: 'El recurso se ha agregado correctamente.',
-        background: '#fff7f7',
-        color: '#3c507d',
-        confirmButtonColor: '#e0c58f',
-        confirmButtonText: 'Aceptar'
-      })
+    async loadRecursos() {
+      this.loading = true
+      try {
+        console.log('🔄 Cargando recursos...')
+        console.log('Token en localStorage:', localStorage.getItem('access_token'))
+        
+        const response = await cloudService.getAllResources() // Usar getAllResources para ver todos los recursos
+        console.log('✅ Respuesta del servidor:', response)
+        
+        if (response.success) {
+          console.log('📥 Datos RAW del backend ANTES del mapeo:', response.data)
+          console.log('📥 Primer recurso raw:', response.data[0])
+          
+          this.recursos = response.data.map(recurso => {
+            console.log('🔄 Mapeando recurso raw:', recurso)
+            const mapped = mapBackendToFrontend(recurso)
+            console.log('✅ Recurso mapeado:', mapped)
+            return mapped
+          })
+          console.log('📦 Recursos mapeados final:', this.recursos)
+        } else {
+          console.warn('⚠️ Respuesta sin éxito:', response)
+        }
+      } catch (error) {
+        console.error('❌ Error loading recursos:', error)
+        console.error('Response data:', error.response?.data)
+        console.error('Response status:', error.response?.status)
+        console.error('Response headers:', error.response?.headers)
+        
+        let errorMessage = 'No se pudieron cargar los recursos.'
+        
+        if (error.response?.status === 401) {
+          errorMessage = 'Sesión expirada. Debes iniciar sesión nuevamente.'
+          // Limpiar localStorage y redirigir al login
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('user')
+          await this.$router.push('/login')
+          return
+        } else if (error.response?.data?.error) {
+          errorMessage = error.response.data.error
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al cargar recursos',
+          text: errorMessage,
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
+      } finally {
+        this.loading = false
+      }
+    },
+    async onAgregarRecurso(nuevo) {
+      try {
+        const backendData = mapFrontendToBackend(nuevo)
+        const response = await cloudService.createResource(backendData)
+        
+        // Agregar el nuevo recurso al inicio de la lista
+        const nuevoRecurso = mapBackendToFrontend(response)
+        this.recursos.unshift(nuevoRecurso)
+        this.isAgregarOpen = false
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Recurso registrado',
+          text: 'El recurso se ha agregado correctamente.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f',
+          confirmButtonText: 'Aceptar'
+        })
+      } catch (error) {
+        console.error('Error creating resource:', error)
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al crear recurso',
+          text: error.response?.data?.error || 'No se pudo crear el recurso.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
+      }
     },
     onModificar() {
       if (this.selectedIndex === null) {
@@ -200,7 +298,7 @@ export default {
       this.editMode = true
       this.editedRow = { ...this.recursos[this.selectedIndex] }
     },
-    onGuardarCambios() {
+    async onGuardarCambios() {
       const req = ['codigo', 'proveedor', 'servicio', 'idRecurso']
       const falta = req.find(k => !String(this.editedRow[k] || '').trim())
       if (falta) {
@@ -213,60 +311,149 @@ export default {
           confirmButtonColor: '#e0c58f'
         })
       }
-      this.recursos.splice(this.selectedIndex, 1, { ...this.editedRow })
-      this.editMode = false
-      this.editedRow = null
-      Swal.fire({
-        icon: 'success',
-        title: 'Cambios guardados',
-        text: 'El recurso fue actualizado correctamente.',
-        background: '#fff7f7',
-        color: '#3c507d',
-        confirmButtonColor: '#e0c58f'
-      })
-    },
-    onCancelarEdicion() {
-      this.editMode = false
-      this.editedRow = null
-    },
-    onEliminar() {
-      if (this.selectedIndex === null) {
-        return Swal.fire({
-          icon: 'info',
-          title: 'Selecciona un registro',
-          text: 'Elige una fila para eliminar.',
+
+      try {
+        console.log('💾 ==============================================');
+        console.log('💾 GUARDANDO CAMBIOS');
+        console.log('📝 Datos editados (editedRow):', this.editedRow);
+        console.log('💰 Campo costo:', this.editedRow.costo);
+        console.log('🔄 Mapeando a backend...');
+        
+        const backendData = mapFrontendToBackend(this.editedRow);
+        console.log('📤 Datos mapeados para backend:', backendData);
+        console.log('💰 Campo costo_mensual_estimado mapeado:', backendData.costo_mensual_estimado);
+        
+        const recursoId = this.recursos[this.selectedIndex].id;
+        console.log('🔍 ID del recurso a actualizar:', recursoId);
+        
+        const response = await cloudService.updateResource(recursoId, backendData);
+        console.log('📥 Respuesta del servidor:', response);
+        
+        // Actualizar el recurso en la lista
+        const recursoActualizado = mapBackendToFrontend(response.data);
+        console.log('🔄 Recurso actualizado mapeado:', recursoActualizado);
+        console.log('💰 Costo actualizado:', recursoActualizado.costo);
+        
+        this.recursos.splice(this.selectedIndex, 1, recursoActualizado);
+        this.editMode = false;
+        this.editedRow = null;
+        console.log('💾 ==============================================');
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Cambios guardados',
+          text: 'El recurso fue actualizado correctamente.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
+      } catch (error) {
+        console.error('Error updating resource:', error)
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar',
+          text: error.response?.data?.error || 'No se pudo actualizar el recurso.',
           background: '#fff7f7',
           color: '#3c507d',
           confirmButtonColor: '#e0c58f'
         })
       }
-      const fila = this.recursos[this.selectedIndex]
-      Swal.fire({
-        icon: 'warning',
-        title: '¿Eliminar recurso?',
-        html: `Se eliminará <b>${fila.codigo}</b> (${fila.proveedor} / ${fila.servicio}).`,
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        background: '#fff7f7',
-        color: '#3c507d',
-        confirmButtonColor: '#e0c58f',
-        cancelButtonColor: '#a85350'
-      }).then(res => {
-        if (res.isConfirmed) {
-          this.recursos.splice(this.selectedIndex, 1)
-          this.selectedIndex = null
-          Swal.fire({
-            icon: 'success',
-            title: 'Eliminado',
-            text: 'El recurso fue eliminado correctamente.',
-            background: '#fff7f7',
-            color: '#3c507d',
-            confirmButtonColor: '#e0c58f'
-          })
+    },
+    onCancelarEdicion() {
+      this.editMode = false
+      this.editedRow = null
+    },
+    async onEliminar() {
+            console.log('🗑️ Iniciando eliminación...');
+            console.log('📍 Índice seleccionado:', this.selectedIndex);
+            
+            // Verificar que hay una fila seleccionada
+            if (this.selectedIndex === -1) {
+                console.warn('⚠️ No hay recurso seleccionado');
+                Swal.fire({
+                    title: 'Atención',
+                    text: 'Por favor selecciona un recurso para eliminar',
+                    icon: 'warning'
+                });
+                return;
+            }
+            
+            const recurso = this.recursos[this.selectedIndex];
+            console.log('🗑️ Recurso a eliminar:', recurso);
+            console.log('🔍 Verificando campos del recurso:');
+            console.log('   - ID:', recurso.id);
+            console.log('   - Código:', recurso.codigo);
+            console.log('   - Responsable User ID:', recurso.responsable_user_id);
+            console.log('   - Responsable (nombre):', recurso.responsable);
+            
+            // Verificar información del usuario actual
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            console.log('👤 Usuario actual:', currentUser);
+            console.log('🔄 Comparación de usuarios:');
+            console.log('   - Usuario actual ID:', currentUser.id);
+            console.log('   - Dueño del recurso ID:', recurso.responsable_user_id);
+            console.log('   - ¿Son iguales?', currentUser.id === recurso.responsable_user_id);
+            
+            // Verificar que tenemos un ID válido
+            if (!recurso.id) {
+                console.error('❌ ERROR: recurso.id es undefined');
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se puede eliminar el recurso: ID no válido',
+                    icon: 'error'
+                });
+                return;
+            }
+            
+            try {
+                const result = await Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `¿Quieres eliminar el recurso "${recurso.codigo || recurso.id}"?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                });
+
+                if (result.isConfirmed) {
+                    console.log('✅ Confirmación recibida, llamando a cloudService.deleteResource con ID:', recurso.id);
+                    
+                    const response = await cloudService.deleteResource(recurso.id);
+                    console.log('🔄 Respuesta del servidor:', response);
+
+                    if (response.success) {
+                        console.log('🎉 Eliminación exitosa según respuesta del servidor');
+                        
+                        // Mostrar mensaje de éxito
+                        await Swal.fire({
+                            title: '¡Eliminado!',
+                            text: 'El recurso ha sido eliminado correctamente',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        // Limpiar selección y recargar la lista
+                        this.selectedIndex = -1;
+                        console.log('🔄 Recargando lista de recursos...');
+                        await this.loadRecursos();
+                        console.log('✅ Lista recargada');
+                    } else {
+                        console.error('❌ Eliminación falló según respuesta del servidor:', response);
+                        throw new Error(response.error || 'Error desconocido');
+                    }
+                }
+            } catch (error) {
+                console.error('💥 Error durante eliminación:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: `Error al eliminar el recurso: ${error.message}`,
+                    icon: 'error'
+                });
+            }
         }
-      })
-    }
   }
 }
 </script>

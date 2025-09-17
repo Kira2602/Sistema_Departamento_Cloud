@@ -56,17 +56,12 @@
               <select id="estado" v-model="form.estado" required>
                 <option value="">Selecciona...</option>
                 <option>Activo</option>
-                <option>Detenido</option>
-                <option>Eliminado</option>
+                <option>Inactivo</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="responsable">Responsable</label>
-              <input id="responsable" v-model="form.responsable" type="text" required />
-            </div>
-            <div class="form-group">
               <label for="costo">Costo mensual estimado</label>
-              <input id="costo" v-model="form.costo" type="number" required />
+              <input id="costo" v-model="form.costo" type="number" step="0.01" placeholder="0.00" />
             </div>
             <div class="button-group2">
               <button type="button" class="btn-edit" @click="goToStep(1)">Atrás</button>
@@ -110,6 +105,7 @@ import Swal from "sweetalert2";
 
 export default {
   name: "AgregarPopup",
+  emits: ['close', 'guardar'],
   data() {
     return {
       step: 1,
@@ -134,20 +130,57 @@ export default {
       this.step = num;
     },
     submitForm() {
+      // Validar campos requeridos
+      const requiredFields = ['codigo', 'proveedor', 'servicio', 'idRecurso', 'estado'];
+      const missingFields = requiredFields.filter(field => !this.form[field]?.trim());
+      
+      if (missingFields.length > 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Campos requeridos',
+          text: 'Por favor completa todos los campos obligatorios.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        });
+        return;
+      }
+
+      // Validar costo si está presente
+      if (this.form.costo && isNaN(parseFloat(this.form.costo))) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Costo inválido',
+          text: 'El costo debe ser un número válido.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        });
+        return;
+      }
+
+      // Validar fechas si están presentes
+      if (this.form.fechaInicio && this.form.fechaFin) {
+        const fechaInicio = new Date(this.form.fechaInicio);
+        const fechaFin = new Date(this.form.fechaFin);
+        
+        if (fechaFin <= fechaInicio) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Fechas inválidas',
+            text: 'La fecha de fin debe ser posterior a la fecha de inicio.',
+            background: '#fff7f7',
+            color: '#3c507d',
+            confirmButtonColor: '#e0c58f'
+          });
+          return;
+        }
+      }
+
       console.log("Formulario enviado:", this.form);
-
-      // SweetAlert2 con colores personalizados
-      Swal.fire({
-        icon: "success",
-        title: "Recurso registrado",
-        text: "El recurso se ha registrado correctamente.",
-        confirmButtonColor: "#e0c58f", // mismo color que los botones
-        confirmButtonText: "Aceptar",
-        background: "#fff7f7",
-        color: "#3c507d",
-      });
-
-      this.$emit("close");
+      
+      // Emitir el evento con los datos del formulario
+      this.$emit('guardar', { ...this.form });
     },
   },
 };

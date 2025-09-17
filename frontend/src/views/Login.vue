@@ -13,12 +13,13 @@
 
           <form @submit.prevent="onSubmit">
             <div class="login-form-group">
-              <label for="username">Usuario <span class="required-star">*</span></label>
+              <label for="username">Email <span class="required-star">*</span></label>
               <input
                 id="username"
-                type="text"
-                placeholder="Ingresa tu usuario"
+                type="email"
+                placeholder="Ingresa tu email"
                 v-model.trim="form.username"
+                :disabled="loading"
                 required
               />
             </div>
@@ -30,11 +31,19 @@
                 :type="showPwd ? 'text' : 'password'"
                 placeholder="Mínimo 8 caracteres"
                 v-model="form.password"
+                :disabled="loading"
                 minlength="8"
                 required
               />
             </div>
-            <button type="submit" class="rounded-button login-cta">Ingresar</button>
+            <button 
+              type="submit" 
+              class="rounded-button login-cta" 
+              :disabled="loading"
+              :class="{ 'loading': loading }"
+            >
+              {{ loading ? '🔄 Iniciando sesión...' : 'Ingresar' }}
+            </button>
           </form>
         </div>
       </div>
@@ -104,9 +113,11 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'           // ✅ importar router
+import { useRouter } from 'vue-router'
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Pagination, Autoplay, Parallax } from 'swiper/modules'
+import { authService } from '@/services/authService.js'
+import Swal from 'sweetalert2'
 import 'swiper/css'
 import 'swiper/css/pagination'
 
@@ -118,18 +129,71 @@ const form = reactive({
   remember: true,
 })
 const showPwd = ref(false)
+const loading = ref(false)
 
-const router = useRouter()                        // ✅ instancia del router
+const router = useRouter()
 
 async function onSubmit() {
-  // Aquí podrías validar / autenticar antes de navegar
-  // e.g., await api.login(form)
+  if (loading.value) return
+  
+  // Validaciones básicas
+  if (!form.username.trim() || !form.password.trim()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Campos requeridos',
+      text: 'Por favor ingresa tu email y contraseña.',
+      background: '#fff7f7',
+      color: '#3c507d',
+      confirmButtonColor: '#e0c58f'
+    })
+    return
+  }
 
-  // 🔀 Navegar por NOMBRE de ruta (asegúrate que exista { name: 'abm-cloud' })
-  router.push({ name: 'abm-cloud' })
+  loading.value = true
 
-  // Si prefieres por path, usa:
-  // router.push('/abm-cloud')
+  try {
+    // Intentar autenticarse con el backend
+    const response = await authService.signin(form.username, form.password)
+    
+    if (response.session && response.user) {
+      Swal.fire({
+        icon: 'success',
+        title: '¡Bienvenido!',
+        text: 'Has iniciado sesión correctamente.',
+        background: '#fff7f7',
+        color: '#3c507d',
+        confirmButtonColor: '#e0c58f',
+        timer: 2000,
+        showConfirmButton: false
+      })
+
+      // Navegar al ABM Cloud después de un breve delay
+      setTimeout(() => {
+        router.push({ name: 'abm-cloud' })
+      }, 1500)
+    }
+  } catch (error) {
+    console.error('Error de autenticación:', error)
+    
+    let errorMessage = 'Error al iniciar sesión. Verifica tus credenciales.'
+    
+    if (error.response?.data?.error) {
+      errorMessage = error.response.data.error
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de autenticación',
+      text: errorMessage,
+      background: '#fff7f7',
+      color: '#3c507d',
+      confirmButtonColor: '#e0c58f'
+    })
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -206,6 +270,20 @@ h1, h2, h3, p, label, input, button, a, span, div {
   padding: 13px 20px;
 }
 .login-cta:hover { background: var(--login-cta-hover); }
+.login-cta:disabled { 
+  opacity: 0.7; 
+  cursor: not-allowed; 
+  background: var(--grey);
+}
+.login-cta.loading {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
 
 .onboarding { flex: 1; background: var(--slider-bg); display: none; width: 50%; }
 

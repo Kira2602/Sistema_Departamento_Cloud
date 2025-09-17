@@ -38,6 +38,8 @@
           </form>
         </div>
       </div>
+
+      <!-- ONBOARDING -->
       <div class="onboarding">
         <Swiper
           class="swiper-container"
@@ -102,6 +104,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'           // ✅ importar router
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import { Pagination, Autoplay, Parallax } from 'swiper/modules'
 import 'swiper/css'
@@ -116,8 +119,17 @@ const form = reactive({
 })
 const showPwd = ref(false)
 
-function onSubmit() {
-  console.log('Login with', { ...form })
+const router = useRouter()                        // ✅ instancia del router
+
+async function onSubmit() {
+  // Aquí podrías validar / autenticar antes de navegar
+  // e.g., await api.login(form)
+
+  // 🔀 Navegar por NOMBRE de ruta (asegúrate que exista { name: 'abm-cloud' })
+  router.push({ name: 'abm-cloud' })
+
+  // Si prefieres por path, usa:
+  // router.push('/abm-cloud')
 }
 </script>
 

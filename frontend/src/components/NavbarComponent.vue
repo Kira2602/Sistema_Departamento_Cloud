@@ -12,9 +12,9 @@
               <img class="logo-img" src="../img/logo_cloud.png" alt="Logo Grafos" />
             </a>
 
-            <span class="brand-wordmark" aria-label="Graphroom">Departamento Cloud</span>
+            <span class="brand-wordmark">Departamento Cloud</span>
 
-            <!-- Botón hamburguesa como label del checkbox -->
+            <!-- Botón hamburguesa -->
             <label class="btn nav-toggle" for="nav-toggle" aria-label="Abrir/cerrar menú">
               <i class="fa fa-bars"></i>
             </label>
@@ -22,13 +22,27 @@
 
           <!-- Derecha: Botón de cerrar sesión -->
           <li class="nav-center">
-            <button class="logout-btn">Cerrar sesión</button>
+            <button class="logout-btn" @click="logout">Cerrar sesión</button>
           </li>
         </ul>
       </div>
     </nav>
   </header>
 </template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+function logout() {
+  // 👉 Opción 1: siempre lleva al login (/)
+  router.push('/')
+
+  // 👉 Opción 2: volver a la vista anterior (historial del navegador)
+  // router.back()
+}
+</script>
 
 <style lang="scss" scoped>
 $primary-color: #c8d9e6;
@@ -47,7 +61,6 @@ ul, li { list-style: none; }
 .nav-toggle-checkbox { display: none; }
 .nav-toggle-checkbox:checked ~ .nav-list .nav-center { display: block !important; }
 
-/* ====== NAV ====== */
 nav {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -64,13 +77,12 @@ nav {
   .nav-list {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* separa logo a la izquierda y botón a la derecha */
+    justify-content: space-between;
     padding: 0 1rem;
     min-height: 72px;
     width: 100%;
 
     .nav-logo {
-      flex: 0 0 auto;
       display: flex; align-items: center; gap: 0.75rem;
 
       .logo { display: inline-flex; align-items: center; text-decoration: none; cursor: default; }
@@ -94,23 +106,20 @@ nav {
         color: #ffffff;
         margin-left: 0.1rem;
         transform: translateY(1px);
-        white-space: nowrap;
         text-shadow: 0 0 6px rgba(200, 217, 230, 0.35);
-        user-select: none;
       }
 
       .nav-toggle { display: none; margin-left: .25rem; cursor: pointer; }
     }
 
     .nav-center {
-      flex: 0 0 auto;
       display: flex;
       align-items: center;
     }
   }
 }
 
-/* ====== BOTÓN CERRAR SESIÓN ====== */
+/* Botón Cerrar sesión */
 .logout-btn {
   padding: 0.6rem 1.2rem;
   background-color: #e0c58f;
@@ -126,7 +135,6 @@ nav {
   color: #c8d9e6;
 }
 
-/* ========================= RESPONSIVE ========================= */
 @media screen and (max-width: $break-point) {
   nav { padding: 0.6rem 0; }
   .nav-list { flex-direction: row; }

@@ -169,7 +169,7 @@ async function onSubmit() {
 
       // Navegar al ABM Cloud después de un breve delay
       setTimeout(() => {
-        router.push({ name: 'abm-cloud' })
+        router.push({ name: 'ABMCloud' })
       }, 1500)
     }
   } catch (error) {

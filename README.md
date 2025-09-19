@@ -44,6 +44,9 @@ npm install @lottiefiles/lottie-player
 ```bash
 npm i swiper
 ```
+```bash
+npm i axios
+```
 
 
 

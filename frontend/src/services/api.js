@@ -1,8 +1,10 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Configuración base del API
-const API_BASE_URL = 'http://localhost:3000';
+// Configuración base del API - funciona tanto en desarrollo como en producción
+const API_BASE_URL = import.meta.env.PROD 
+  ? '/api' // En producción (Vercel), usar ruta relativa
+  : 'http://localhost:3000'; // En desarrollo, usar localhost sin /api
 
 console.log('🔧 API configurada con URL:', API_BASE_URL);
 

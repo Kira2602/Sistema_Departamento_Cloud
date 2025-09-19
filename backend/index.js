@@ -37,7 +37,17 @@ app.get("/", (req, res) => {
   });
 });
 
-// Health check
+// API route for Vercel compatibility
+app.get("/api", (req, res) => {
+  res.json({ 
+    message: "Backend Node.js funcionando 🚀",
+    status: "OK",
+    timestamp: new Date().toISOString(),
+    version: "1.0.0"
+  });
+});
+
+// Health check - both versions
 app.get("/health", (req, res) => {
   res.json({ 
     status: "OK", 
@@ -46,14 +56,25 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Auth routes
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    message: "Sistema de Inventario Cloud API funcionando correctamente",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Auth routes - both versions for compatibility
 app.use("/auth", require("./src/routes.auth"));
+app.use("/api/auth", require("./src/routes.auth"));
 
-// Cloud routes
+// Cloud routes - both versions for compatibility
 app.use("/cloud", require("./src/routes.cloud"));
+app.use("/api/cloud", require("./src/routes.cloud"));
 
-// Profile routes
+// Profile routes - both versions for compatibility
 app.use("/profiles", require("./src/routes.profiles"));
+app.use("/api/profiles", require("./src/routes.profiles"));
 
 // 404 handler - debe estar al final de todas las rutas
 app.use((req, res) => {

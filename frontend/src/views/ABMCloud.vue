@@ -4,27 +4,29 @@
     <header>
       <NavbarComponent />
     </header>
+    <section class="hero hero-parallax">
+      <div class="hero-parallax__bg" aria-hidden="true"></div>
+      <div class="hero-parallax__scrim" aria-hidden="true"></div>
 
-    <!-- HERO compacto -->
-    <section class="hero">
-      <div class="hero-content">
-        <h1>RECURSOS CLOUD</h1>
-        <p class="hero-description">
-          Administra y lleva el control de tus recursos en la nube con un seguimiento completo de costos, responsables y estados.
-        </p>
-      </div>
+      <div class="hero-inner">
+        <div class="hero-content">
+          <h1>RECURSOS CLOUD</h1>
+          <p class="hero-description">
+            Administra y lleva el control de tus recursos en la nube con un seguimiento completo de costos, responsables y estados.
+          </p>
+        </div>
 
-      <div class="lottie-container1 hero-lottie">
-        <dotlottie-player
-          src="https://lottie.host/1db45383-d967-49f1-960e-5f2cdda11099/AOWyIri1vh.lottie"
-          autoplay
-          loop
-          style="width: 200px; height: 200px"
-        />
+        <div class="lottie-container1 hero-lottie">
+          <dotlottie-player
+            src="https://lottie.host/1db45383-d967-49f1-960e-5f2cdda11099/AOWyIri1vh.lottie"
+            autoplay
+            loop
+            style="width: 200px; height: 200px"
+          />
+        </div>
       </div>
     </section>
 
-    <!-- CONTENEDOR PRINCIPAL -->
     <div class="historial-actividades">
       <!-- Acciones -->
       <div class="acciones">
@@ -44,7 +46,6 @@
       <div class="contenedor-principal">
         <!-- ===== Barra de Filtros ===== -->
         <div class="filtros-toolbar">
-          <!-- Encabezado superior derecha -->
           <div class="filtros-head">
             <span class="filtros-label">Filtros:</span>
             <button class="btn accion-btn ok" @click="aplicarFiltros">Aplicar</button>
@@ -469,31 +470,71 @@ export default {
 * { font-family: 'Poppins', sans-serif; padding: 0; margin: 0; }
 :global(body) { padding-top: 120px; }
 
-/* Radio personalizado */
-input[type="radio"]{
-  appearance:none; -webkit-appearance:none; -moz-appearance:none;
-  width:18px;height:18px;border:2px solid #3c507d;border-radius:50%;
-  background:#fff;position:relative;cursor:pointer;transition:.2s;
-}
-input[type="radio"]:checked{background:#3c507d;border-color:#3c507d}
-input[type="radio"]:checked::after{
-  content:"";position:absolute;top:4px;left:4px;width:8px;height:8px;
-  background:#fff;border-radius:50%;
+.hero{
+  position: relative;
+  border-radius: 16px;
+  margin: 0 20px 18px;   
+  min-height: 180px;
+  overflow: hidden;
 }
 
-/* HERO */
-.hero{display:flex;align-items:center;background:#3c5070;padding:10px 20px;
-  margin:0 auto 15px;border-radius:12px;margin-left:20px;margin-right:20px;min-height:150px}
+.hero-parallax{
+  perspective: 1px;
+  transform-style: preserve-3d;
+}
+
+.hero-parallax__bg{
+  position: absolute;
+  inset: 0;
+  background-image: url('../img/background.jpg'); /* <-- tu imagen */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: translateZ(-0.6px) scale(1.6);
+  transform-origin: center;
+  will-change: transform;
+  z-index: -2;
+}
+
+.hero-parallax__scrim{
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.15) 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-inner{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+}
 .hero-content{flex:1;display:flex;flex-direction:column;align-items:flex-start;padding-left:30px}
 .hero h1{font-size:2rem;color:#fff;margin:0}
 .hero-description{font-size:.9rem;color:#fff;margin-top:6px}
 .hero-lottie{display:flex;justify-content:flex-end;align-items:center;width:30%}
 
-/* Contenedor principal */
+@supports not (perspective: 1px) {
+  .hero-parallax__bg{
+    position: fixed;
+    top: 80px;
+    left: 0; right: 0;
+    height: 260px; 
+    transform: none;
+    background-attachment: fixed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .hero-parallax__bg{ transform: none; }
+  .hero-parallax__scrim{ background: rgba(0,0,0,0.35); }
+}
+
 .historial-actividades{background:#d9cbc2;padding:20px;border-radius:15px;max-width:1200px;margin:0 auto}
 .contenedor-principal{display:flex;flex-direction:column;gap:14px}
 
-/* ===== Barra de filtros en GRID ===== */
 .filtros-toolbar{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -518,15 +559,12 @@ input[type="radio"]:checked::after{
   letter-spacing:.2px;
 }
 
-/* Campos */
 .filtro-inline{display:flex;flex-direction:column;gap:6px}
 .filtro-inline label{ font-weight:600; color:#3c5070; font-size:.9rem; }
 
-/* spans de columnas (desktop) */
 .f-col-4 { grid-column: span 4; min-width: 280px; }
 .f-col-2 { grid-column: span 2; min-width: 180px; }
 
-/* Inputs/Selects */
 .custom-select,.custom-input{
   padding:9px 10px;border:2px solid #b8a89d;border-radius:10px;background:#fff;
   font-size:14px;color:#333;transition:border-color .2s, box-shadow .2s;
@@ -568,16 +606,15 @@ tr.selected{outline:3px solid #3c5070;outline-offset:-3px}
 
 /* Responsive */
 @media (max-width: 1024px){
-  .filtros-toolbar{
-    grid-template-columns: repeat(6, 1fr);
-  }
+  .hero-inner{ padding: 12px 16px; }
+  .filtros-toolbar{ grid-template-columns: repeat(6, 1fr); }
   .f-col-4 { grid-column: 1 / -1; }
   .f-col-2 { grid-column: span 3; }
 }
 @media (max-width: 640px){
-  .filtros-toolbar{
-    grid-template-columns: repeat(1, 1fr);
-  }
+  .hero-lottie{ display: none; } /* más espacio al texto en móviles */
+  .hero-inner{ padding: 12px; }
+  .filtros-toolbar{ grid-template-columns: repeat(1, 1fr); }
   .f-col-4, .f-col-2 { grid-column: 1 / -1; }
   .filtros-head{ justify-content: flex-start; gap:8px; }
 }

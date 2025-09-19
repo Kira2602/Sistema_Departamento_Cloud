@@ -14,14 +14,34 @@ const requireAuth = async (req, res, next) => {
 	return next();
 };
 
-// Get all cloud resources for authenticated user
+// Get all cloud resources for authenticated user (con filtros opcionales)
 router.get("/", requireAuth, async (req, res) => {
 	try {
-		const { data, error } = await supabase
+		const { q, proveedor, estado, region, minCost, maxCost, dateFrom, dateTo } = req.query;
+
+		let query = supabase
 			.from("cloud")
 			.select("*")
-			.eq("responsable_user_id", req.user.id)
+			.eq("responsable_user_id", req.user.id) // solo los del usuario autenticado
 			.order("created_at", { ascending: false });
+
+		// Filtros opcionales
+		if (q) {
+			query = query.or(
+				`codigo_recurso.ilike.%${q}%,servicio_producto.ilike.%${q}%,id_recurso.ilike.%${q}%`
+			);
+		}
+		if (proveedor) query = query.eq("proveedor_cloud", proveedor);
+		if (estado) query = query.eq("estado", estado);
+		if (region) query = query.eq("region_zona", region);
+
+		if (minCost) query = query.gte("costo_mensual_estimado", Number(minCost));
+		if (maxCost) query = query.lte("costo_mensual_estimado", Number(maxCost));
+
+		if (dateFrom) query = query.gte("created_at", dateFrom);
+		if (dateTo) query = query.lte("created_at", dateTo);
+
+		const { data, error } = await query;
 
 		if (error) {
 			return res.status(400).json({ error: error.message });
@@ -37,14 +57,34 @@ router.get("/", requireAuth, async (req, res) => {
 	}
 });
 
-// Get all cloud resources (admin view - sin JOIN por ahora)
+// Get all cloud resources (admin view - sin JOIN por ahora) (con filtros opcionales)
 router.get("/all", requireAuth, async (req, res) => {
 	try {
 		console.log('🔍 Ejecutando query getAllResources...');
-		const { data, error } = await supabase
+		const { q, proveedor, estado, region, minCost, maxCost, dateFrom, dateTo } = req.query;
+
+		let query = supabase
 			.from("cloud")
 			.select("*")
 			.order("created_at", { ascending: false });
+
+		// Filtros opcionales
+		if (q) {
+			query = query.or(
+				`codigo_recurso.ilike.%${q}%,servicio_producto.ilike.%${q}%,id_recurso.ilike.%${q}%`
+			);
+		}
+		if (proveedor) query = query.eq("proveedor_cloud", proveedor);
+		if (estado) query = query.eq("estado", estado);
+		if (region) query = query.eq("region_zona", region);
+
+		if (minCost) query = query.gte("costo_mensual_estimado", Number(minCost));
+		if (maxCost) query = query.lte("costo_mensual_estimado", Number(maxCost));
+
+		if (dateFrom) query = query.gte("created_at", dateFrom);
+		if (dateTo) query = query.lte("created_at", dateTo);
+
+		const { data, error } = await query;
 
 		console.log('📊 Resultado de la query:', { data: data?.length || 0, error: error?.message });
 
@@ -240,7 +280,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
 	console.log('✅ Resultado de la eliminación:', deletedData);
 	console.log('✅ Recurso eliminado exitosamente de Supabase');
 	console.log('🗑️ ==============================================');
-	
+
 	return res.json({ 
 		success: true,
 		deleted: id,
@@ -249,4 +289,4 @@ router.delete("/:id", requireAuth, async (req, res) => {
 	});
 });
 
-module.exports = router; 
+module.exports = router;

@@ -5,7 +5,8 @@
       <NavbarComponent />
     </header>
 
-    <!-- HERO compacto -->
+    <!-- HERO com              :class="{ selected: selectedIndex === idx }"
+              @click.stop="selectedIndex = idx">cto -->
     <section class="hero">
       <div class="hero-content">
         <h1>RECURSOS CLOUD</h1>
@@ -27,7 +28,53 @@
 
     <!-- TABLA DE RECURSOS -->
     <div class="historial-actividades">
-      <div class="acciones">
+      <!-- Filtros de búsqueda - ARRIBA de los botones -->
+      <div class="filtros-container">
+        <div class="filtro-group">
+          <label>Código Recurso:</label>
+                      <input 
+              type="text" 
+              v-model="filtroIdRecurso" 
+              placeholder="Buscar por Código (CR-001) o ID de recurso..."
+              class="filtro-input"
+            >
+        </div>
+        
+        <div class="filtro-group">
+          <label>Proveedor:</label>
+          <input v-model="filtroProveedor" type="text" placeholder="AWS, Azure, GCP..." class="filtro-input" />
+        </div>
+        
+        <div class="filtro-group">
+          <label>Estado:</label>
+          <select v-model="filtroEstado" class="filtro-select">
+            <option value="">Todos</option>
+            <option>Activo</option>
+            <option>Inactivo</option>
+          </select>
+        </div>
+        
+        <div class="filtro-group">
+          <label>Responsable:</label>
+          <select v-model="filtroResponsable" class="filtro-select">
+            <option value="">Todos</option>
+            <option>Yudith Noa</option>
+            <option>Rosario Calisaya</option>
+            <option>Alan Marquez</option>
+            <option>Jorge Flores</option>
+            <option>Jesus Meriles</option>
+            <option>CIO</option>
+          </select>
+        </div>
+        
+        <div class="filtro-buttons">
+          <button class="btn-filtro buscar" @click="aplicarFiltros">🔍 Buscar</button>
+          <button class="btn-filtro limpiar" @click="limpiarFiltros">🗑️ Limpiar</button>
+        </div>
+      </div>
+
+      <!-- Botones de acción - ABAJO de los filtros -->
+      <div class="acciones">        
         <button class="btn accion-btn" @click="isAgregarOpen = true">Agregar</button>
 
         <template v-if="!editMode">
@@ -41,7 +88,7 @@
         </template>
       </div>
 
-      <div class="tabla-actividades">
+      <div class="tabla-actividades" @click="clearSelectionOnEmptyClick">
         <table>
           <thead>
             <tr>
@@ -77,7 +124,7 @@
             </tr>
             <tr
               v-else
-              v-for="(r, idx) in recursos"
+              v-for="(r, idx) in recursosFiltrados"
               :key="r.id || idx"
               :class="{ selected: selectedIndex === idx }"
               @click="selectedIndex = idx"
@@ -147,7 +194,7 @@
 
     <footer class="footer">
       <div class="footer-content">
-        <p>© 2024 Grupo CloudCare. Todos los derechos reservados.</p>
+        <p>© 2025 Team If...Else | Cloud Department. Todos los derechos reservados.</p>
       </div>
     </footer>
 
@@ -164,7 +211,6 @@ import Swal from 'sweetalert2'
 import NavbarComponent from '@/components/NavbarComponent.vue'
 import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
-import { authService } from '@/services/authService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
 export default {
@@ -178,10 +224,56 @@ export default {
       editedRow: null,
       recursos: [],
       loading: false,
-      user: null
+      user: null,
+      filtroIdRecurso: '',  // Filtro por ID de recurso
+      filtroProveedor: '',  // Filtro por proveedor
+      filtroEstado: '',     // Filtro por estado  
+      filtroResponsable: '' // Filtro por responsable
+    }
+  },
+  computed: {
+    // Filtra los recursos basado en los filtros seleccionados
+    recursosFiltrados() {
+      let recursos = this.recursos;
+      
+      // Filtro por ID de recurso (texto que contenga) - buscar tanto en idRecurso como en codigo
+      if (this.filtroIdRecurso && this.filtroIdRecurso.trim() !== '') {
+        const filtroId = this.filtroIdRecurso.toLowerCase().trim();
+        recursos = recursos.filter(recurso => 
+          recurso.idRecurso?.toLowerCase().includes(filtroId) || 
+          recurso.codigo?.toLowerCase().includes(filtroId)
+        );
+      }
+      
+      // Filtro por proveedor (texto que contenga)
+      if (this.filtroProveedor && this.filtroProveedor.trim() !== '') {
+        const filtroProveedor = this.filtroProveedor.toLowerCase().trim();
+        recursos = recursos.filter(recurso => 
+          recurso.proveedor?.toLowerCase().includes(filtroProveedor)
+        );
+      }
+      
+      // Filtro por estado (exacto)
+      if (this.filtroEstado && this.filtroEstado !== '') {
+        recursos = recursos.filter(recurso => 
+          recurso.estado === this.filtroEstado
+        );
+      }
+      
+      // Filtro por responsable (exacto)
+      if (this.filtroResponsable && this.filtroResponsable !== '') {
+        recursos = recursos.filter(recurso => 
+          recurso.responsable === this.filtroResponsable
+        );
+      }
+      
+      return recursos;
     }
   },
   async mounted() {
+    console.log('🚀 ===== COMPONENTE ABMCloud MONTADO =====')
+    console.log('🚀 ===== SIN AUTENTICACIÓN =====')
+    
     // Cargar el web-component de dotLottie si no existe aún
     if (!customElements.get('dotlottie-player')) {
       const s = document.createElement('script')
@@ -189,56 +281,46 @@ export default {
       document.head.appendChild(s)
     }
 
-    // Verificar autenticación
-    if (!authService.isAuthenticated()) {
-      await this.$router.push('/login')
-      return
-    }
-
-    this.user = authService.getUser()
+    // Cargar recursos directamente sin autenticación
+    console.log('🔄 Llamando a loadRecursos...')
     await this.loadRecursos()
+    console.log('✅ loadRecursos completado')
   },
   methods: {
     async loadRecursos() {
       this.loading = true
       try {
-        console.log('🔄 Cargando recursos...')
-        console.log('Token en localStorage:', localStorage.getItem('access_token'))
+        console.log('🔄 Cargando recursos sin autenticación...')
         
-        const response = await cloudService.getAllResources() // Usar getAllResources para ver todos los recursos
+        const response = await cloudService.getAllResources()
         console.log('✅ Respuesta del servidor:', response)
         
-        if (response.success) {
-          console.log('📥 Datos RAW del backend ANTES del mapeo:', response.data)
-          console.log('📥 Primer recurso raw:', response.data[0])
+        // El backend devuelve directamente el array, no necesita response.success
+        if (Array.isArray(response)) {
+          console.log('📥 Datos del backend:', response)
+          console.log('📥 Primer recurso:', response[0])
           
-          this.recursos = response.data.map(recurso => {
-            console.log('🔄 Mapeando recurso raw:', recurso)
+          this.recursos = response.map(recurso => {
+            console.log('🔄 Mapeando recurso:', recurso)
             const mapped = mapBackendToFrontend(recurso)
             console.log('✅ Recurso mapeado:', mapped)
             return mapped
           })
-          console.log('📦 Recursos mapeados final:', this.recursos)
+          console.log('📦 Total recursos cargados:', this.recursos.length)
         } else {
-          console.warn('⚠️ Respuesta sin éxito:', response)
+          console.warn('⚠️ Respuesta no es un array:', response)
         }
       } catch (error) {
         console.error('❌ Error loading recursos:', error)
         console.error('Response data:', error.response?.data)
         console.error('Response status:', error.response?.status)
-        console.error('Response headers:', error.response?.headers)
         
         let errorMessage = 'No se pudieron cargar los recursos.'
         
-        if (error.response?.status === 401) {
-          errorMessage = 'Sesión expirada. Debes iniciar sesión nuevamente.'
-          // Limpiar localStorage y redirigir al login
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('user')
-          await this.$router.push('/login')
-          return
-        } else if (error.response?.data?.error) {
+        if (error.response?.data?.error) {
           errorMessage = error.response.data.error
+        } else {
+          errorMessage = 'Error al cargar recursos. Intenta de nuevo.'
         }
         
         Swal.fire({
@@ -296,7 +378,7 @@ export default {
         })
       }
       this.editMode = true
-      this.editedRow = { ...this.recursos[this.selectedIndex] }
+      this.editedRow = { ...this.recursosFiltrados[this.selectedIndex] }
     },
     async onGuardarCambios() {
       const req = ['codigo', 'proveedor', 'servicio', 'idRecurso']
@@ -323,7 +405,7 @@ export default {
         console.log('📤 Datos mapeados para backend:', backendData);
         console.log('💰 Campo costo_mensual_estimado mapeado:', backendData.costo_mensual_estimado);
         
-        const recursoId = this.recursos[this.selectedIndex].id;
+        const recursoId = this.recursosFiltrados[this.selectedIndex].id;
         console.log('🔍 ID del recurso a actualizar:', recursoId);
         
         const response = await cloudService.updateResource(recursoId, backendData);
@@ -378,21 +460,12 @@ export default {
                 return;
             }
             
-            const recurso = this.recursos[this.selectedIndex];
+            const recurso = this.recursosFiltrados[this.selectedIndex];
             console.log('🗑️ Recurso a eliminar:', recurso);
-            console.log('🔍 Verificando campos del recurso:');
+            console.log('🔍 Recurso seleccionado:', recurso);
             console.log('   - ID:', recurso.id);
-            console.log('   - Código:', recurso.codigo);
-            console.log('   - Responsable User ID:', recurso.responsable_user_id);
+            console.log('   - Código:', recurso.codigo_recurso);
             console.log('   - Responsable (nombre):', recurso.responsable);
-            
-            // Verificar información del usuario actual
-            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-            console.log('👤 Usuario actual:', currentUser);
-            console.log('🔄 Comparación de usuarios:');
-            console.log('   - Usuario actual ID:', currentUser.id);
-            console.log('   - Dueño del recurso ID:', recurso.responsable_user_id);
-            console.log('   - ¿Son iguales?', currentUser.id === recurso.responsable_user_id);
             
             // Verificar que tenemos un ID válido
             if (!recurso.id) {
@@ -453,6 +526,46 @@ export default {
                     icon: 'error'
                 });
             }
+        },
+
+        aplicarFiltros() {
+            // Los filtros se aplican automáticamente a través de la computed property
+            // Pero forzamos una actualización para mostrar feedback al usuario
+            console.log('🔍 Aplicando filtros:', {
+                id: this.filtroIdRecurso,
+                proveedor: this.filtroProveedor,
+                estado: this.filtroEstado,
+                responsable: this.filtroResponsable
+            });
+            
+            // Limpiar selección al aplicar filtros
+            this.selectedIndex = -1;
+            
+            // Mostrar resultados
+            const resultados = this.recursosFiltrados.length;
+            console.log(`✅ Filtros aplicados. Mostrando ${resultados} recursos`);
+            
+            if (resultados === 0 && (this.filtroIdRecurso || this.filtroProveedor || this.filtroEstado || this.filtroResponsable)) {
+                console.warn('⚠️ No se encontraron recursos que coincidan con los filtros');
+            }
+        },
+        
+        limpiarFiltros() {
+            this.filtroIdRecurso = '';
+            this.filtroProveedor = '';
+            this.filtroEstado = '';
+            this.filtroResponsable = '';
+            this.selectedIndex = -1; // También limpiar selección
+            console.log('🗑️ Filtros y selección limpiados');
+        },
+
+        clearSelectionOnEmptyClick(event) {
+            // Solo deseleccionar si se hace clic en el área vacía (no en filas o inputs)
+            if (event.target.closest('tr') || event.target.closest('input') || event.target.closest('select') || event.target.closest('button')) {
+                return; // No deseleccionar si se hizo clic en una fila o control
+            }
+            this.selectedIndex = -1;
+            console.log('👆 Selección limpiada por click en área vacía');
         }
   }
 }
@@ -517,4 +630,118 @@ tr.selected{outline:3px solid #3c5070;outline-offset:-3px}
 /* Footer */
 .footer{background:#112250;padding:30px 10px;text-align:center;color:#fff;margin-top:30px;border-radius:8px}
 .footer-content{font-size:14px}
+
+/* Filtros de búsqueda */
+.filtros-container {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.filtro-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filtro-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3c5070;
+  margin: 0;
+}
+
+.filtro-select {
+  padding: 8px 12px;
+  border: 2px solid #3c5070;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: #2a4056;
+  box-shadow: 0 0 0 3px rgba(60, 80, 112, 0.1);
+}
+
+.filtro-select:hover {
+  border-color: #2a4056;
+}
+
+/* Estilos para inputs de texto */
+.filtro-input {
+  padding: 8px 12px;
+  border: 2px solid #3c5070;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #fff;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.filtro-input:focus {
+  outline: none;
+  border-color: #2a4056;
+  box-shadow: 0 0 0 3px rgba(60, 80, 112, 0.1);
+}
+
+.filtro-input:hover {
+  border-color: #2a4056;
+}
+
+.filtro-input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* Contenedor de botones de filtro */
+.filtro-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+.btn-filtro {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.btn-filtro.buscar {
+  background: #28a745;
+  color: white;
+}
+
+.btn-filtro.buscar:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.btn-filtro.limpiar {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-filtro.limpiar:hover {
+  background: #545b62;
+  transform: translateY(-1px);
+}
+
+/* Separación entre filtros y botones */
+.acciones {
+  margin-top: 0;
+}
 </style>

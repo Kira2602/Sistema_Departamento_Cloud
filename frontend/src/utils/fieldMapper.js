@@ -22,6 +22,7 @@ export function mapFrontendToBackend(frontendData) {
     id_recurso: frontendData.idRecurso, 
     region_zona: frontendData.region,
     estado: frontendData.estado,
+    responsable: frontendData.responsable,
     costo_mensual_estimado: parseCost(frontendData.costo),
     fecha_inicio: frontendData.fechaInicio ? new Date(frontendData.fechaInicio).toISOString() : null,
     fecha_fin_contrato: frontendData.fechaFin ? new Date(frontendData.fechaFin).toISOString() : null,
@@ -44,8 +45,7 @@ export function mapBackendToFrontend(backendData) {
     idRecurso: backendData.id_recurso,
     region: backendData.region_zona,
     estado: backendData.estado,
-    responsable: backendData.profiles?.full_name || backendData.responsable_user_id || 'Usuario',
-    responsable_user_id: backendData.responsable_user_id,
+    responsable: backendData.responsable || 'Sin asignar',
     costo: formatCurrency(backendData.costo_mensual_estimado),
     costoNumerico: backendData.costo_mensual_estimado,
     fechaInicio: formatDate(backendData.fecha_inicio),
@@ -108,6 +108,10 @@ export function validateResourceData(data) {
   
   if (!data.estado?.trim()) {
     errors.push('Estado es requerido');
+  }
+  
+  if (!data.responsable?.trim()) {
+    errors.push('Responsable es requerido');
   }
   
   if (data.costo_mensual_estimado && isNaN(parseFloat(data.costo_mensual_estimado))) {

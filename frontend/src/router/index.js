@@ -7,13 +7,13 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Login',
-      component: Login
-    },
-    {
-      path: '/abm-cloud',
       name: 'ABMCloud',
       component: ABMCloud
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login
     },
   ],
 })

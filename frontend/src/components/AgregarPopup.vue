@@ -60,6 +60,18 @@
               </select>
             </div>
             <div class="form-group">
+              <label for="responsable">Responsable</label>
+              <select id="responsable" v-model="form.responsable" required>
+                <option value="">Selecciona responsable...</option>
+                <option>Yudith Noa</option>
+                <option>Rosario Calisaya</option>
+                <option>Alan Marquez</option>
+                <option>Jorge Flores</option>
+                <option>Jesus Meriles</option>
+                <option>CIO</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label for="costo">Costo mensual estimado</label>
               <input id="costo" v-model="form.costo" type="number" step="0.01" placeholder="0.00" />
             </div>
@@ -131,7 +143,7 @@ export default {
     },
     submitForm() {
       // Validar campos requeridos
-      const requiredFields = ['codigo', 'proveedor', 'servicio', 'idRecurso', 'estado'];
+      const requiredFields = ['codigo', 'proveedor', 'servicio', 'idRecurso', 'estado', 'responsable'];
       const missingFields = requiredFields.filter(field => !this.form[field]?.trim());
       
       if (missingFields.length > 0) {

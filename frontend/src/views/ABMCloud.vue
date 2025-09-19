@@ -27,6 +27,57 @@
 
     <!-- TABLA DE RECURSOS -->
     <div class="historial-actividades">
+      <!-- FILTROS DE BÚSQUEDA -->
+      <div class="filtros-section">
+        <div class="filtros-container">
+          <div class="filtro-group">
+            <label>🔍 Buscar por código:</label>
+            <input 
+              v-model="filtros.codigo" 
+              type="text" 
+              placeholder="Ej: CR-001"
+              class="filtro-input"
+            />
+          </div>
+          
+          <div class="filtro-group">
+            <label>☁️ Proveedor:</label>
+            <select v-model="filtros.proveedor" class="filtro-select">
+              <option value="">Todos</option>
+              <option value="AWS">AWS</option>
+              <option value="Azure">Azure</option>
+              <option value="GCP">GCP</option>
+            </select>
+          </div>
+          
+          <div class="filtro-group">
+            <label>📊 Estado:</label>
+            <select v-model="filtros.estado" class="filtro-select">
+              <option value="">Todos</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
+          
+          <div class="filtro-group">
+            <label>👤 Responsable:</label>
+            <select v-model="filtros.responsable" class="filtro-select">
+              <option value="">Todos</option>
+              <option value="Yudith Noa">Yudith Noa</option>
+              <option value="Rosario Calisaya">Rosario Calisaya</option>
+              <option value="Alan Marquez">Alan Marquez</option>
+              <option value="Jorge Flores">Jorge Flores</option>
+              <option value="Jesus Meriles">Jesus Meriles</option>
+              <option value="CIO">CIO</option>
+            </select>
+          </div>
+          
+          <div class="filtro-group">
+            <button class="btn-limpiar" @click="limpiarFiltros">🗑️ Limpiar</button>
+          </div>
+        </div>
+      </div>
+
       <div class="acciones">
         <button class="btn accion-btn" @click="isAgregarOpen = true">Agregar</button>
 
@@ -68,30 +119,31 @@
                 </div>
               </td>
             </tr>
-            <tr v-else-if="recursos.length === 0">
+            <tr v-else-if="recursosFiltrados.length === 0">
               <td colspan="13" style="text-align: center; padding: 40px;">
                 <div style="color: #666; font-size: 16px;">
-                  No hay recursos disponibles. ¡Agrega el primero!
+                  🔍 No hay recursos que coincidan con los filtros aplicados.
+                  <br><small>Prueba ajustando los criterios de búsqueda.</small>
                 </div>
               </td>
             </tr>
             <tr
               v-else
-              v-for="(r, idx) in recursos"
+              v-for="(r, idx) in recursosFiltrados"
               :key="r.id || idx"
-              :class="{ selected: selectedIndex === idx }"
-              @click="selectedIndex = idx"
+              :class="{ selected: selectedResourceId === r.id }"
+              @click="selectedResourceId = r.id"
             >
               <td>
                 <input
                   type="radio"
                   name="sel"
-                  :checked="selectedIndex === idx"
-                  @change="selectedIndex = idx"
+                  :checked="selectedResourceId === r.id"
+                  @change="selectedResourceId = r.id"
                 />
               </td>
 
-              <template v-if="editMode && selectedIndex === idx">
+              <template v-if="editMode && selectedResourceId === r.id">
                 <td><input class="cell-input" v-model="editedRow.codigo" /></td>
                 <td>
                   <select class="cell-input" v-model="editedRow.proveedor">
@@ -107,7 +159,17 @@
                     <option>Inactivo</option>
                   </select>
                 </td>
-                <td><input class="cell-input" v-model="editedRow.responsable" /></td>
+                <td>
+                  <select class="cell-input" v-model="editedRow.responsable">
+                    <option value="">Seleccionar...</option>
+                    <option>Yudith Noa</option>
+                    <option>Rosario Calisaya</option>
+                    <option>Alan Marquez</option>
+                    <option>Jorge Flores</option>
+                    <option>Jesus Meriles</option>
+                    <option>CIO</option>
+                  </select>
+                </td>
                 <td><input class="cell-input" v-model="editedRow.costo" /></td>
                 <td><input class="cell-input" type="date" v-model="editedRow.fechaInicio" /></td>
                 <td><input class="cell-input" type="date" v-model="editedRow.fechaFin" /></td>
@@ -173,12 +235,40 @@ export default {
   data() {
     return {
       isAgregarOpen: false,
-      selectedIndex: null,
+      selectedResourceId: null,
       editMode: false,
       editedRow: null,
       recursos: [],
       loading: false,
-      user: null
+      user: null,
+      filtros: {
+        codigo: '',
+        proveedor: '',
+        estado: '',
+        responsable: ''
+      }
+    }
+  },
+  computed: {
+    recursosFiltrados() {
+      return this.recursos.filter(recurso => {
+        const matchCodigo = !this.filtros.codigo || 
+          recurso.codigo.toLowerCase().includes(this.filtros.codigo.toLowerCase());
+        
+        const matchProveedor = !this.filtros.proveedor || 
+          recurso.proveedor === this.filtros.proveedor;
+          
+        const matchEstado = !this.filtros.estado || 
+          recurso.estado === this.filtros.estado;
+          
+        const matchResponsable = !this.filtros.responsable || 
+          recurso.responsable === this.filtros.responsable;
+        
+        return matchCodigo && matchProveedor && matchEstado && matchResponsable;
+      });
+    },
+    recursoSeleccionado() {
+      return this.recursos.find(recurso => recurso.id === this.selectedResourceId) || null;
     }
   },
   async mounted() {
@@ -285,7 +375,7 @@ export default {
       }
     },
     onModificar() {
-      if (this.selectedIndex === null) {
+      if (!this.selectedResourceId) {
         return Swal.fire({
           icon: 'info',
           title: 'Selecciona un registro',
@@ -296,7 +386,7 @@ export default {
         })
       }
       this.editMode = true
-      this.editedRow = { ...this.recursos[this.selectedIndex] }
+      this.editedRow = { ...this.recursoSeleccionado }
     },
     async onGuardarCambios() {
       const req = ['codigo', 'proveedor', 'servicio', 'idRecurso']
@@ -323,7 +413,7 @@ export default {
         console.log('📤 Datos mapeados para backend:', backendData);
         console.log('💰 Campo costo_mensual_estimado mapeado:', backendData.costo_mensual_estimado);
         
-        const recursoId = this.recursos[this.selectedIndex].id;
+        const recursoId = this.editedRow.id;
         console.log('🔍 ID del recurso a actualizar:', recursoId);
         
         const response = await cloudService.updateResource(recursoId, backendData);
@@ -365,10 +455,10 @@ export default {
     },
     async onEliminar() {
             console.log('🗑️ Iniciando eliminación...');
-            console.log('📍 Índice seleccionado:', this.selectedIndex);
+            console.log('📍 ID del recurso seleccionado:', this.selectedResourceId);
             
             // Verificar que hay una fila seleccionada
-            if (this.selectedIndex === -1) {
+            if (!this.selectedResourceId) {
                 console.warn('⚠️ No hay recurso seleccionado');
                 Swal.fire({
                     title: 'Atención',
@@ -378,7 +468,7 @@ export default {
                 return;
             }
             
-            const recurso = this.recursos[this.selectedIndex];
+            const recurso = this.recursoSeleccionado;
             console.log('🗑️ Recurso a eliminar:', recurso);
             console.log('🔍 Verificando campos del recurso:');
             console.log('   - ID:', recurso.id);
@@ -436,7 +526,7 @@ export default {
                         });
 
                         // Limpiar selección y recargar la lista
-                        this.selectedIndex = -1;
+                        this.selectedResourceId = null;
                         console.log('🔄 Recargando lista de recursos...');
                         await this.loadRecursos();
                         console.log('✅ Lista recargada');
@@ -453,6 +543,16 @@ export default {
                     icon: 'error'
                 });
             }
+        },
+        limpiarFiltros() {
+            this.filtros = {
+                codigo: '',
+                proveedor: '',
+                estado: '',
+                responsable: ''
+            };
+            // Limpiar también la selección
+            this.selectedResourceId = null;
         }
   }
 }
@@ -517,4 +617,82 @@ tr.selected{outline:3px solid #3c5070;outline-offset:-3px}
 /* Footer */
 .footer{background:#112250;padding:30px 10px;text-align:center;color:#fff;margin-top:30px;border-radius:8px}
 .footer-content{font-size:14px}
+
+/* Filtros de búsqueda */
+.filtros-section {
+  margin-bottom: 20px;
+  background: rgba(255, 247, 247, 0.9);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.filtros-container {
+  display: flex;
+  gap: 15px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.filtro-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.filtro-group label {
+  color: #3c507d;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.filtro-input,
+.filtro-select {
+  padding: 8px 12px;
+  border: 2px solid #3c507d;
+  border-radius: 8px;
+  background: #f0f0f0;
+  font-size: 14px;
+  color: #3c507d;
+  transition: all 0.3s ease;
+}
+
+.filtro-input:focus,
+.filtro-select:focus {
+  outline: none;
+  border-color: #6d7da1;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(60, 80, 125, 0.2);
+}
+
+.btn-limpiar {
+  background: #a85350;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: fit-content;
+}
+
+.btn-limpiar:hover {
+  background: #964a47;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 83, 80, 0.3);
+}
+
+@media (max-width: 768px) {
+  .filtros-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filtro-group {
+    min-width: auto;
+  }
+}
 </style>

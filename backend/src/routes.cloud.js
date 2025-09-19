@@ -14,13 +14,12 @@ const requireAuth = async (req, res, next) => {
 	return next();
 };
 
-// Get all cloud resources for authenticated user
+// Get all cloud resources for authenticated user (ahora mostramos todos los recursos)
 router.get("/", requireAuth, async (req, res) => {
 	try {
 		const { data, error } = await supabase
 			.from("cloud")
 			.select("*")
-			.eq("responsable_user_id", req.user.id)
 			.order("created_at", { ascending: false });
 
 		if (error) {
@@ -89,7 +88,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 	}
 });
 
-// Insert into cloud table (owner enforced)
+// Insert into cloud table
 router.post("/", requireAuth, async (req, res) => {
 	const {
 		codigo_recurso,
@@ -97,6 +96,7 @@ router.post("/", requireAuth, async (req, res) => {
 		servicio_producto,
 		id_recurso,
 		estado,
+		responsable,
 		fecha_inicio,
 		region_zona,
 		costo_mensual_estimado,
@@ -105,7 +105,7 @@ router.post("/", requireAuth, async (req, res) => {
 		notas
 	} = req.body || {};
 
-	if (!codigo_recurso || !proveedor_cloud || !servicio_producto || !id_recurso || !estado) {
+	if (!codigo_recurso || !proveedor_cloud || !servicio_producto || !id_recurso || !estado || !responsable) {
 		return res.status(400).json({ error: "Missing required fields" });
 	}
 
@@ -114,7 +114,7 @@ router.post("/", requireAuth, async (req, res) => {
 		proveedor_cloud,
 		servicio_producto,
 		id_recurso,
-		responsable_user_id: req.user.id, // enforce owner
+		responsable,
 		estado,
 		fecha_inicio: fecha_inicio || new Date().toISOString(),
 		region_zona,
@@ -129,7 +129,12 @@ router.post("/", requireAuth, async (req, res) => {
 		.insert(payload)
 		.select("*")
 		.single();
-	if (error) return res.status(400).json({ error: error.message });
+		
+	if (error) {
+		console.error('Error creating resource:', error);
+		return res.status(400).json({ error: error.message });
+	}
+	
 	return res.status(201).json(data);
 });
 

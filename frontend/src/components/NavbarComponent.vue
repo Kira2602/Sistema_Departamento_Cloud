@@ -6,18 +6,23 @@
         <input id="nav-toggle" type="checkbox" class="nav-toggle-checkbox" aria-label="Abrir/cerrar menú" />
 
         <ul class="nav-list">
-          <!-- Logo + Wordmark centrado -->
-          <li class="nav-logo nav-center-logo">
+          <!-- Izquierda: Logo + Wordmark -->
+          <li class="nav-logo">
             <a class="logo" href="#" aria-label="Home">
               <img class="logo-img" src="../img/logo_cloud.png" alt="Logo Grafos" />
             </a>
 
             <span class="brand-wordmark">Departamento Cloud</span>
 
-            <!-- Botón hamburguesa (no necesario, pero mantenido por compatibilidad) -->
+            <!-- Botón hamburguesa -->
             <label class="btn nav-toggle" for="nav-toggle" aria-label="Abrir/cerrar menú">
               <i class="fa fa-bars"></i>
             </label>
+          </li>
+
+          <!-- Derecha: Botón de cerrar sesión -->
+          <li class="nav-center">
+            <button class="logout-btn" @click="logout">Cerrar sesión</button>
           </li>
         </ul>
       </div>
@@ -26,7 +31,17 @@
 </template>
 
 <script setup>
-// Sin necesidad de router ni funciones de logout
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+function logout() {
+  // 👉 Opción 1: siempre lleva al login (/)
+  router.push('/')
+
+  // 👉 Opción 2: volver a la vista anterior (historial del navegador)
+  // router.back()
+}
 </script>
 
 <style lang="scss" scoped>
@@ -62,7 +77,7 @@ nav {
   .nav-list {
     display: flex;
     align-items: center;
-    justify-content: center; /* Centrar el contenido */
+    justify-content: space-between;
     padding: 0 1rem;
     min-height: 72px;
     width: 100%;
@@ -96,11 +111,33 @@ nav {
 
       .nav-toggle { display: none; margin-left: .25rem; cursor: pointer; }
     }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+    }
   }
+}
+
+/* Botón Cerrar sesión */
+.logout-btn {
+  padding: 0.6rem 1.2rem;
+  background-color: #e0c58f;
+  color: #2c2b2b;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.logout-btn:hover {
+  background-color: #c9302c;
+  color: #c8d9e6;
 }
 
 @media screen and (max-width: $break-point) {
   nav { padding: 0.6rem 0; }
   .nav-list { flex-direction: row; }
+  .nav-center { margin-top: 0; }
 }
 </style>

@@ -23,12 +23,7 @@
             </div>
             <div class="form-group">
               <label for="proveedor">Proveedor Cloud</label>
-              <select id="proveedor" v-model="form.proveedor" required>
-                <option value="">Selecciona...</option>
-                <option>AWS</option>
-                <option>Azure</option>
-                <option>GCP</option>
-              </select>
+              <input id="proveedor" v-model="form.proveedor" type="text" placeholder="AWS, Azure, GCP, etc." required />
             </div>
             <div class="form-group">
               <label for="servicio">Servicio/Producto</label>
@@ -62,6 +57,18 @@
             <div class="form-group">
               <label for="costo">Costo mensual estimado</label>
               <input id="costo" v-model="form.costo" type="number" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="form-group">
+              <label for="responsable">Responsable</label>
+              <select id="responsable" v-model="form.responsable" required>
+                <option value="">Selecciona...</option>
+                <option>Yudith Noa</option>
+                <option>Rosario Calisaya</option>
+                <option>Alan Marquez</option>
+                <option>Jorge Flores</option>
+                <option>Jesus Meriles</option>
+                <option>CIO</option>
+              </select>
             </div>
             <div class="button-group2">
               <button type="button" class="btn-edit" @click="goToStep(1)">Atrás</button>

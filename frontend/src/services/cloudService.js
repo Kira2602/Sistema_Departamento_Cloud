@@ -8,9 +8,9 @@ export const cloudService = {
     return response.data;
   },
 
-  // Obtener todos los recursos (vista admin)
+  // Obtener todos los recursos (sin autenticación)
   async getAllResources() {
-    const response = await api.get('/cloud/all');
+    const response = await api.get('/cloud');
     return response.data;
   },
 

@@ -4,6 +4,8 @@
     <header>
       <NavbarComponent />
     </header>
+
+    <!-- HERO con fondo 3D/parallax aplicado -->
     <section class="hero hero-parallax">
       <div class="hero-parallax__bg" aria-hidden="true"></div>
       <div class="hero-parallax__scrim" aria-hidden="true"></div>
@@ -17,6 +19,7 @@
         </div>
 
         <div class="lottie-container1 hero-lottie">
+          <!-- Usa dotlottie-player para .lottie -->
           <dotlottie-player
             src="https://lottie.host/1db45383-d967-49f1-960e-5f2cdda11099/AOWyIri1vh.lottie"
             autoplay
@@ -27,8 +30,62 @@
       </div>
     </section>
 
+    <!-- ===== CONTENEDOR DE FILTROS (fuera del contenedor de la tabla) ===== -->
+    <div class="panel-filtros">
+      <div class="filtros-toolbar">
+        <div class="filtros-head">
+          <span class="filtros-label">Filtros:</span>
+          <button class="btn accion-btn ok" @click="aplicarFiltros">Aplicar</button>
+          <button class="btn accion-btn cancelar" @click="limpiarFiltros">Limpiar</button>
+        </div>
+
+        <div class="filtro-inline f-col-4">
+          <label>Buscar (código o ID de recurso)</label>
+          <input
+            type="text"
+            v-model="filtroIdRecurso"
+            placeholder="Ej: CR-001, rds-prod-01…"
+            class="custom-input"
+          />
+        </div>
+
+        <div class="filtro-inline f-col-2">
+          <label>Proveedor</label>
+          <input
+            v-model="filtroProveedor"
+            type="text"
+            placeholder="AWS, Azure, GCP…"
+            class="custom-input"
+          />
+        </div>
+
+        <div class="filtro-inline f-col-2">
+          <label>Estado</label>
+          <select v-model="filtroEstado" class="custom-select">
+            <option value="">Todos</option>
+            <option>Activo</option>
+            <option>Inactivo</option>
+          </select>
+        </div>
+
+        <div class="filtro-inline f-col-2">
+          <label>Responsable</label>
+          <select v-model="filtroResponsable" class="custom-select">
+            <option value="">Todos</option>
+            <option>Yudith Noa</option>
+            <option>Rosario Calisaya</option>
+            <option>Alan Marquez</option>
+            <option>Jorge Flores</option>
+            <option>Jesus Meriles</option>
+            <option>CIO</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DE RECURSOS -->
     <div class="historial-actividades">
-      <!-- Acciones -->
+      <!-- Botones de acción -->
       <div class="acciones">
         <button class="btn accion-btn" @click="isAgregarOpen = true">Agregar</button>
 
@@ -43,151 +100,108 @@
         </template>
       </div>
 
-      <div class="contenedor-principal">
-        <!-- ===== Barra de Filtros ===== -->
-        <div class="filtros-toolbar">
-          <div class="filtros-head">
-            <span class="filtros-label">Filtros:</span>
-            <button class="btn accion-btn ok" @click="aplicarFiltros">Aplicar</button>
-            <button class="btn accion-btn cancelar" @click="limpiarFiltros">Limpiar</button>
-          </div>
+      <div class="tabla-actividades" @click="clearSelectionOnEmptyClick">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px">Sel.</th>
+              <th>Código de recurso</th>
+              <th>Proveedor Cloud</th>
+              <th>Servicio/Producto</th>
+              <th>ID de recurso</th>
+              <th>Región/Zona</th>
+              <th>Estado</th>
+              <th>Responsable</th>
+              <th>Costo mensual estimado</th>
+              <th>Fecha de inicio</th>
+              <th>Fecha fin de contrato</th>
+              <th>Garantía</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="13" style="text-align: center; padding: 40px;">
+                <div style="color: #3c507d; font-size: 16px;">
+                  🔄 Cargando recursos...
+                </div>
+              </td>
+            </tr>
+            <tr v-else-if="recursos.length === 0">
+              <td colspan="13" style="text-align: center; padding: 40px;">
+                <div style="color: #666; font-size: 16px;">
+                  No hay recursos disponibles. ¡Agrega el primero!
+                </div>
+              </td>
+            </tr>
+            <tr v-else-if="recursosFiltrados.length === 0">
+              <td colspan="13" style="text-align: center; padding: 40px;">
+                <div style="color: #666; font-size: 16px;">
+                  No hay recursos que coincidan con los filtros.
+                </div>
+              </td>
+            </tr>
+            <tr
+              v-else
+              v-for="(r, idx) in paginatedRecursos"
+              :key="r.id || idx"
+              :class="{ selected: selectedIndex === startIndex + idx }"
+              @click="selectedIndex = startIndex + idx"
+            >
+              <td>
+                <input
+                  type="radio"
+                  name="sel"
+                  :checked="selectedIndex === startIndex + idx"
+                  @change="selectedIndex = startIndex + idx"
+                />
+              </td>
 
-          <div class="filtro-inline f-col-4">
-            <label>Buscar (código, servicio, notas, ID)</label>
-            <input
-              type="text"
-              v-model="filtros.search"
-              placeholder="Buscar…"
-              class="custom-input"
-            />
-          </div>
-
-          <div class="filtro-inline f-col-2">
-            <label>Proveedor</label>
-            <select v-model="filtros.proveedor" class="custom-select">
-              <option value="">Todos</option>
-              <option v-for="p in proveedoresUnicos" :key="p" :value="p">{{ p }}</option>
-            </select>
-          </div>
-
-          <div class="filtro-inline f-col-2">
-            <label>Estado</label>
-            <select v-model="filtros.estado" class="custom-select">
-              <option value="">Todos</option>
-              <option v-for="e in estadosUnicos" :key="e" :value="e">{{ e }}</option>
-            </select>
-          </div>
-
-          <div class="filtro-inline f-col-2">
-            <label>Responsable</label>
-            <select v-model="filtros.responsable" class="custom-select">
-              <option value="">Todos</option>
-              <option v-for="r in responsablesUnicos" :key="r" :value="r">{{ r }}</option>
-            </select>
-          </div>
-
-          <div class="filtro-inline f-col-2">
-            <label>Fecha (vigente ese día)</label>
-            <input type="date" v-model="filtros.fechaRef" class="custom-input" />
-          </div>
-        </div>
-
-        <!-- ===== Tabla ===== -->
-        <div class="tabla-actividades tabla-con-borde">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:60px">Sel.</th>
-                <th>Código de recurso</th>
-                <th>Proveedor Cloud</th>
-                <th>Servicio/Producto</th>
-                <th>ID de recurso</th>
-                <th>Región/Zona</th>
-                <th>Estado</th>
-                <th>Responsable</th>
-                <th>Costo mensual estimado</th>
-                <th>Fecha de inicio</th>
-                <th>Fecha fin de contrato</th>
-                <th>Garantía</th>
-                <th>Notas</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="loading">
-                <td colspan="13" style="text-align: center; padding: 40px;">
-                  <div style="color: #3c507d; font-size: 16px;">🔄 Cargando recursos...</div>
-                </td>
-              </tr>
-
-              <tr v-else-if="displayedRecursos.length === 0">
-                <td colspan="13" style="text-align: center; padding: 40px;">
-                  <div style="color: #666; font-size: 16px;">No hay recursos que coincidan con los filtros.</div>
-                </td>
-              </tr>
-
-              <tr
-                v-else
-                v-for="(r, idx) in paginatedRecursos"
-                :key="r.id || idx"
-                :class="{ selected: selectedIndex === startIndex + idx }"
-                @click="selectedIndex = startIndex + idx"
-              >
+              <!-- Edición -->
+              <template v-if="editMode && selectedIndex === startIndex + idx">
+                <td><input class="cell-input" v-model="editedRow.codigo" /></td>
                 <td>
-                  <input
-                    type="radio"
-                    name="sel"
-                    :checked="selectedIndex === startIndex + idx"
-                    @change="selectedIndex = startIndex + idx"
-                  />
+                  <select class="cell-input" v-model="editedRow.proveedor">
+                    <option>AWS</option><option>Azure</option><option>GCP</option>
+                  </select>
                 </td>
+                <td><input class="cell-input" v-model="editedRow.servicio" /></td>
+                <td><input class="cell-input" v-model="editedRow.idRecurso" /></td>
+                <td><input class="cell-input" v-model="editedRow.region" /></td>
+                <td>
+                  <select class="cell-input" v-model="editedRow.estado">
+                    <option>Activo</option>
+                    <option>Inactivo</option>
+                  </select>
+                </td>
+                <td><input class="cell-input" v-model="editedRow.responsable" /></td>
+                <td><input class="cell-input" v-model="editedRow.costo" /></td>
+                <td><input class="cell-input" type="date" v-model="editedRow.fechaInicio" /></td>
+                <td><input class="cell-input" type="date" v-model="editedRow.fechaFin" /></td>
+                <td><input class="cell-input" v-model="editedRow.garantia" /></td>
+                <td><input class="cell-input" v-model="editedRow.notas" /></td>
+              </template>
 
-                <!-- Edición -->
-                <template v-if="editMode && selectedIndex === startIndex + idx">
-                  <td><input class="cell-input" v-model="editedRow.codigo" /></td>
-                  <td>
-                    <select class="cell-input" v-model="editedRow.proveedor">
-                      <option>AWS</option><option>Azure</option><option>GCP</option>
-                    </select>
-                  </td>
-                  <td><input class="cell-input" v-model="editedRow.servicio" /></td>
-                  <td><input class="cell-input" v-model="editedRow.idRecurso" /></td>
-                  <td><input class="cell-input" v-model="editedRow.region" /></td>
-                  <td>
-                    <select class="cell-input" v-model="editedRow.estado">
-                      <option>Activo</option>
-                      <option>Inactivo</option>
-                    </select>
-                  </td>
-                  <td><input class="cell-input" v-model="editedRow.responsable" /></td>
-                  <td><input class="cell-input" v-model="editedRow.costo" /></td>
-                  <td><input class="cell-input" type="date" v-model="editedRow.fechaInicio" /></td>
-                  <td><input class="cell-input" type="date" v-model="editedRow.fechaFin" /></td>
-                  <td><input class="cell-input" v-model="editedRow.garantia" /></td>
-                  <td><input class="cell-input" v-model="editedRow.notas" /></td>
-                </template>
-
-                <!-- Lectura -->
-                <template v-else>
-                  <td>{{ r.codigo }}</td>
-                  <td>{{ r.proveedor }}</td>
-                  <td>{{ r.servicio }}</td>
-                  <td>{{ r.idRecurso }}</td>
-                  <td>{{ r.region }}</td>
-                  <td>{{ r.estado }}</td>
-                  <td>{{ r.responsable }}</td>
-                  <td>{{ r.costo }}</td>
-                  <td>{{ r.fechaInicio }}</td>
-                  <td>{{ r.fechaFin }}</td>
-                  <td>{{ r.garantia }}</td>
-                  <td>{{ r.notas }}</td>
-                </template>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              <!-- Lectura -->
+              <template v-else>
+                <td>{{ r.codigo }}</td>
+                <td>{{ r.proveedor }}</td>
+                <td>{{ r.servicio }}</td>
+                <td>{{ r.idRecurso }}</td>
+                <td>{{ r.region }}</td>
+                <td>{{ r.estado }}</td>
+                <td>{{ r.responsable }}</td>
+                <td>{{ r.costo }}</td>
+                <td>{{ r.fechaInicio }}</td>
+                <td>{{ r.fechaFin }}</td>
+                <td>{{ r.garantia }}</td>
+                <td>{{ r.notas }}</td>
+              </template>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Paginación -->
       <div class="pagination-container">
         <ul class="pagination">
           <li
@@ -221,7 +235,7 @@
 
     <footer class="footer">
       <div class="footer-content">
-        <p>© 2025 Departamento Cloud. Todos los derechos reservados.</p>
+        <p>© 2025 Team If...Else | Cloud Department. Todos los derechos reservados.</p>
       </div>
     </footer>
 
@@ -238,7 +252,6 @@ import Swal from 'sweetalert2'
 import NavbarComponent from '@/components/NavbarComponent.vue'
 import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
-import { authService } from '@/services/authService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
 export default {
@@ -247,7 +260,7 @@ export default {
   data() {
     return {
       isAgregarOpen: false,
-      selectedIndex: null, // índice global dentro de displayedRecursos
+      selectedIndex: null,
       editMode: false,
       editedRow: null,
       recursos: [],
@@ -255,128 +268,106 @@ export default {
       user: null,
 
       // filtros
-      filtros: {
-        search: '',
-        proveedor: '',
-        estado: '',
-        responsable: '',
-        fechaRef: '' // fecha “vigente ese día”
-      },
+      filtroIdRecurso: '',     // texto: código o idRecurso
+      filtroProveedor: '',     // texto
+      filtroEstado: '',        // select
+      filtroResponsable: '',   // select
+      filtroFechaRef: '',      // date (vigente ese día)
 
       // paginación
       currentPage: 1,
-      pageSize: 10,
-
-      aplicarKey: 0
+      pageSize: 10
     }
   },
   computed: {
-    proveedoresUnicos() { return this.uniquesFrom(this.recursos.map(r => r.proveedor)) },
-    estadosUnicos() { return this.uniquesFrom(this.recursos.map(r => r.estado)) },
-    responsablesUnicos() { return this.uniquesFrom(this.recursos.map(r => r.responsable)) },
+    // Filtra los recursos basado en los filtros seleccionados
+    recursosFiltrados() {
+      let recursos = this.recursos
 
-    displayedRecursos() {
-      // fuerza recomputación cuando se pulse Aplicar
-      // eslint-disable-next-line no-unused-expressions
-      this.aplicarKey
+      // Buscar por idRecurso o codigo (contiene)
+      if (this.filtroIdRecurso && this.filtroIdRecurso.trim() !== '') {
+        const q = this.filtroIdRecurso.toLowerCase().trim()
+        recursos = recursos.filter(recurso =>
+          recurso.idRecurso?.toLowerCase().includes(q) ||
+          recurso.codigo?.toLowerCase().includes(q)
+        )
+      }
 
-      const f = this.filtros
-      const dRef = f.fechaRef ? new Date(f.fechaRef) : null
+      // Proveedor por texto (contiene)
+      if (this.filtroProveedor && this.filtroProveedor.trim() !== '') {
+        const prov = this.filtroProveedor.toLowerCase().trim()
+        recursos = recursos.filter(recurso =>
+          recurso.proveedor?.toLowerCase().includes(prov)
+        )
+      }
 
-      return this.recursos.filter(r => {
-        const searchOk =
-          !f.search ||
-          [r.codigo, r.servicio, r.notas, r.idRecurso]
-            .filter(Boolean)
-            .some(val => String(val).toLowerCase().includes(f.search.toLowerCase()))
+      // Estado exacto
+      if (this.filtroEstado && this.filtroEstado !== '') {
+        recursos = recursos.filter(recurso => recurso.estado === this.filtroEstado)
+      }
 
-        const provOk = !f.proveedor || r.proveedor === f.proveedor
-        const estOk = !f.estado || r.estado === f.estado
-        const respOk = !f.responsable || r.responsable === f.responsable
+      // Responsable exacto
+      if (this.filtroResponsable && this.filtroResponsable !== '') {
+        recursos = recursos.filter(recurso => recurso.responsable === this.filtroResponsable)
+      }
 
-        // Fecha “vigente ese día”: dRef ∈ [fechaInicio, fechaFin]
-        let fechaOk = true
-        if (dRef) {
+      // Fecha “vigente ese día”: filtroFechaRef ∈ [fechaInicio, fechaFin]
+      if (this.filtroFechaRef) {
+        const dRef = new Date(this.filtroFechaRef)
+        recursos = recursos.filter(r => {
           const fi = r.fechaInicio ? new Date(r.fechaInicio) : null
           const ff = r.fechaFin ? new Date(r.fechaFin) : null
-          fechaOk =
-            !!fi &&
+          return !!fi &&
             this.onlyDate(dRef) >= this.onlyDate(fi) &&
             (ff ? this.onlyDate(dRef) <= this.onlyDate(ff) : true)
-        }
+        })
+      }
 
-        return searchOk && provOk && estOk && respOk && fechaOk
-      })
+      return recursos
     },
 
     // paginación computada
-    startIndex() {
-      return (this.currentPage - 1) * this.pageSize
-    },
+    startIndex() { return (this.currentPage - 1) * this.pageSize },
     paginatedRecursos() {
-      return this.displayedRecursos.slice(this.startIndex, this.startIndex + this.pageSize)
+      return this.recursosFiltrados.slice(this.startIndex, this.startIndex + this.pageSize)
     },
-    totalPages() {
-      return Math.max(1, Math.ceil(this.displayedRecursos.length / this.pageSize))
-    }
+    totalPages() { return Math.max(1, Math.ceil(this.recursosFiltrados.length / this.pageSize)) }
   },
   async mounted() {
-    // Cargar dotlottie (para el hero)
+    // Cargar el web-component de dotLottie si no existe aún
     if (!customElements.get('dotlottie-player')) {
       const s = document.createElement('script')
       s.src = 'https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js'
       document.head.appendChild(s)
     }
 
-    if (!authService.isAuthenticated()) {
-      await this.$router.push('/login')
-      return
-    }
-
-    this.user = authService.getUser()
+    // Cargar recursos directamente (sin romper tu flujo actual)
     await this.loadRecursos()
   },
   methods: {
     onlyDate(d) { const nd = new Date(d); nd.setHours(0,0,0,0); return nd },
-    uniquesFrom(arr) {
-      return [...new Set(arr.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)))
-    },
-
-    aplicarFiltros() {
-      this.aplicarKey++
-      this.currentPage = 1
-      this.selectedIndex = null
-    },
-    limpiarFiltros() {
-      this.filtros = { search: '', proveedor: '', estado: '', responsable: '', fechaRef: '' }
-      this.aplicarKey++
-      this.currentPage = 1
-      this.selectedIndex = null
-    },
-
-    // paginador
-    changePage(p) {
-      if (p < 1 || p > this.totalPages) return
-      this.currentPage = p
-      this.selectedIndex = null
-    },
-    nextPage() { this.changePage(this.currentPage + 1) },
-    prevPage() { this.changePage(this.currentPage - 1) },
 
     async loadRecursos() {
       this.loading = true
       try {
         const response = await cloudService.getAllResources()
-        if (response.success) this.recursos = response.data.map(mapBackendToFrontend)
+        if (Array.isArray(response)) {
+          this.recursos = response.map(mapBackendToFrontend)
+        }
       } catch (error) {
         let errorMessage = 'No se pudieron cargar los recursos.'
-        if (error.response?.status === 401) {
-          errorMessage = 'Sesión expirada. Debes iniciar sesión nuevamente.'
-          localStorage.removeItem('access_token'); localStorage.removeItem('user')
-          await this.$router.push('/login'); return
-        } else if (error.response?.data?.error) errorMessage = error.response.data.error
-        Swal.fire({ icon: 'error', title: 'Error al cargar recursos', text: errorMessage, background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f' })
-      } finally { this.loading = false }
+        if (error.response?.data?.error) errorMessage = error.response.data.error
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al cargar recursos',
+          text: errorMessage,
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
+      } finally {
+        this.loading = false
+      }
     },
 
     async onAgregarRecurso(nuevo) {
@@ -386,52 +377,111 @@ export default {
         const nuevoRecurso = mapBackendToFrontend(response)
         this.recursos.unshift(nuevoRecurso)
         this.isAgregarOpen = false
-        Swal.fire({ icon: 'success', title: 'Recurso registrado', text: 'El recurso se ha agregado correctamente.', background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f', confirmButtonText: 'Aceptar' })
+        Swal.fire({
+          icon: 'success',
+          title: 'Recurso registrado',
+          text: 'El recurso se ha agregado correctamente.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f',
+          confirmButtonText: 'Aceptar'
+        })
       } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error al crear recurso', text: error.response?.data?.error || 'No se pudo crear el recurso.', background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f' })
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al crear recurso',
+          text: error.response?.data?.error || 'No se pudo crear el recurso.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
       }
     },
 
     onModificar() {
-      if (this.selectedIndex === null) {
-        return Swal.fire({ icon: 'info', title: 'Selecciona un registro', text: 'Por favor selecciona una fila para modificar.', background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f' })
+      if (this.selectedIndex === null || this.selectedIndex === -1) {
+        return Swal.fire({
+          icon: 'info',
+          title: 'Selecciona un registro',
+          text: 'Por favor selecciona una fila para modificar.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
       }
       this.editMode = true
-      this.editedRow = { ...this.displayedRecursos[this.selectedIndex] }
+      this.editedRow = { ...this.recursosFiltrados[this.selectedIndex] }
     },
 
     async onGuardarCambios() {
       const req = ['codigo', 'proveedor', 'servicio', 'idRecurso']
       const falta = req.find(k => !String(this.editedRow[k] || '').trim())
       if (falta) {
-        return Swal.fire({ icon: 'warning', title: 'Completa los campos', text: 'Revisa código, proveedor, servicio e ID de recurso.', background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f' })
+        return Swal.fire({
+          icon: 'warning',
+          title: 'Completa los campos',
+          text: 'Revisa código, proveedor, servicio e ID de recurso.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
       }
 
       try {
         const backendData = mapFrontendToBackend(this.editedRow)
-        const original = this.recursos.find(r => r.id === this.editedRow.id)
-        const recursoId = original?.id
+        const recursoId = this.recursosFiltrados[this.selectedIndex].id
         const response = await cloudService.updateResource(recursoId, backendData)
         const recursoActualizado = mapBackendToFrontend(response.data)
-        const idxReal = this.recursos.findIndex(r => r.id === recursoId)
-        if (idxReal !== -1) this.recursos.splice(idxReal, 1, recursoActualizado)
-        this.editMode = false; this.editedRow = null
-        Swal.fire({ icon: 'success', title: 'Cambios guardados', text: 'El recurso fue actualizado correctamente.', background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f' })
+
+        // Reemplaza por índice REAL en this.recursos
+        const realIdx = this.recursos.findIndex(r => r.id === recursoId)
+        if (realIdx !== -1) this.recursos.splice(realIdx, 1, recursoActualizado)
+
+        this.editMode = false
+        this.editedRow = null
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Cambios guardados',
+          text: 'El recurso fue actualizado correctamente.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
       } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error al actualizar', text: error.response?.data?.error || 'No se pudo actualizar el recurso.', background: '#fff7f7', color: '#3c507d', confirmButtonColor: '#e0c58f' })
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al actualizar',
+          text: error.response?.data?.error || 'No se pudo actualizar el recurso.',
+          background: '#fff7f7',
+          color: '#3c507d',
+          confirmButtonColor: '#e0c58f'
+        })
       }
     },
 
-    onCancelarEdicion() { this.editMode = false; this.editedRow = null },
+    onCancelarEdicion() {
+      this.editMode = false
+      this.editedRow = null
+    },
 
     async onEliminar() {
+      // Verifica selección
       if (this.selectedIndex === -1 || this.selectedIndex === null) {
-        return Swal.fire({ title: 'Atención', text: 'Por favor selecciona un recurso para eliminar', icon: 'warning' })
+        return Swal.fire({
+          title: 'Atención',
+          text: 'Por favor selecciona un recurso para eliminar',
+          icon: 'warning'
+        })
       }
 
-      const recurso = this.displayedRecursos[this.selectedIndex]
+      const recurso = this.recursosFiltrados[this.selectedIndex]
       if (!recurso?.id) {
-        return Swal.fire({ title: 'Error', text: 'No se puede eliminar el recurso: ID no válido', icon: 'error' })
+        return Swal.fire({
+          title: 'Error',
+          text: 'No se puede eliminar el recurso: ID no válido',
+          icon: 'error'
+        })
       }
 
       try {
@@ -449,17 +499,63 @@ export default {
         if (result.isConfirmed) {
           const response = await cloudService.deleteResource(recurso.id)
           if (response.success) {
-            await Swal.fire({ title: '¡Eliminado!', text: 'El recurso ha sido eliminado correctamente', icon: 'success', timer: 2000, showConfirmButton: false })
-            const idxReal = this.recursos.findIndex(r => r.id === recurso.id)
-            if (idxReal !== -1) this.recursos.splice(idxReal, 1)
+            await Swal.fire({
+              title: '¡Eliminado!',
+              text: 'El recurso ha sido eliminado correctamente',
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            })
+            // Recargar lista conservando funcionalidad
             this.selectedIndex = -1
+            await this.loadRecursos()
           } else {
             throw new Error(response.error || 'Error desconocido')
           }
         }
       } catch (error) {
-        Swal.fire({ title: 'Error', text: `Error al eliminar el recurso: ${error.message}`, icon: 'error' })
+        Swal.fire({
+          title: 'Error',
+          text: `Error al eliminar el recurso: ${error.message}`,
+          icon: 'error'
+        })
       }
+    },
+
+    aplicarFiltros() {
+      // feedback + reset de paginación/selección
+      this.selectedIndex = -1
+      this.currentPage = 1
+      // (El filtrado es reactivo vía recursosFiltrados)
+    },
+
+    limpiarFiltros() {
+      this.filtroIdRecurso = ''
+      this.filtroProveedor = ''
+      this.filtroEstado = ''
+      this.filtroResponsable = ''
+      this.filtroFechaRef = ''
+      this.selectedIndex = -1
+      this.currentPage = 1
+    },
+
+    // paginación
+    changePage(p) {
+      if (p < 1 || p > this.totalPages) return
+      this.currentPage = p
+      this.selectedIndex = null
+    },
+    nextPage() { this.changePage(this.currentPage + 1) },
+    prevPage() { this.changePage(this.currentPage - 1) },
+
+    clearSelectionOnEmptyClick(event) {
+      if (
+        event.target.closest('tr') ||
+        event.target.closest('input') ||
+        event.target.closest('select') ||
+        event.target.closest('button')
+      ) return
+      this.selectedIndex = -1
     }
   }
 }
@@ -470,23 +566,22 @@ export default {
 * { font-family: 'Poppins', sans-serif; padding: 0; margin: 0; }
 :global(body) { padding-top: 120px; }
 
+/* ===== HERO con parallax 3D (diseño aplicado) ===== */
 .hero{
   position: relative;
   border-radius: 16px;
-  margin: 0 20px 18px;   
+  margin: 0 20px 18px;
   min-height: 180px;
   overflow: hidden;
 }
-
 .hero-parallax{
   perspective: 1px;
   transform-style: preserve-3d;
 }
-
 .hero-parallax__bg{
   position: absolute;
   inset: 0;
-  background-image: url('../img/background.jpg'); /* <-- tu imagen */
+  background-image: url('../img/background.jpg'); /* tu imagen */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -495,7 +590,6 @@ export default {
   will-change: transform;
   z-index: -2;
 }
-
 .hero-parallax__scrim{
   position: absolute;
   inset: 0;
@@ -503,7 +597,6 @@ export default {
   z-index: -1;
   pointer-events: none;
 }
-
 .hero-inner{
   display:flex;
   align-items:center;
@@ -516,25 +609,38 @@ export default {
 .hero-description{font-size:.9rem;color:#fff;margin-top:6px}
 .hero-lottie{display:flex;justify-content:flex-end;align-items:center;width:30%}
 
+/* Fallback si no hay soporte para perspectiva */
 @supports not (perspective: 1px) {
   .hero-parallax__bg{
     position: fixed;
-    top: 80px;
-    left: 0; right: 0;
-    height: 260px; 
+    top: 80px; left: 0; right: 0;
+    height: 260px;
     transform: none;
     background-attachment: fixed;
   }
 }
-
+/* Reduce motion */
 @media (prefers-reduced-motion: reduce){
   .hero-parallax__bg{ transform: none; }
   .hero-parallax__scrim{ background: rgba(0,0,0,0.35); }
 }
 
-.historial-actividades{background:#d9cbc2;padding:20px;border-radius:15px;max-width:1200px;margin:0 auto}
-.contenedor-principal{display:flex;flex-direction:column;gap:14px}
+/* ===== Contenedor de filtros arriba del contenedor de tabla ===== */
+.panel-filtros{
+  max-width: 1200px;
+  margin: 0 auto 12px; /* centrado y separación respecto a la tabla */
+}
 
+/* Contenedor principal de la tabla/acciones/paginación */
+.historial-actividades{
+  background:#d9cbc2;
+  padding:20px;
+  border-radius:15px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+/* ===== Barra de filtros en GRID (diseño aplicado) ===== */
 .filtros-toolbar{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -558,10 +664,8 @@ export default {
   font-weight:700;
   letter-spacing:.2px;
 }
-
 .filtro-inline{display:flex;flex-direction:column;gap:6px}
 .filtro-inline label{ font-weight:600; color:#3c5070; font-size:.9rem; }
-
 .f-col-4 { grid-column: span 4; min-width: 280px; }
 .f-col-2 { grid-column: span 2; min-width: 180px; }
 
@@ -571,9 +675,17 @@ export default {
 }
 .custom-select:focus,.custom-input:focus{outline:none;border-color:#4f6281;box-shadow:0 0 0 3px rgba(79,98,129,.15)}
 
+/* Botones de acción */
+.acciones{display:flex;gap:12px;margin-bottom:15px}
+.accion-btn{padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:.2s}
+.accion-btn:hover{opacity:.92}
+.accion-btn{background:#849cc4;color:#252525}
+.accion-btn.eliminar{background:#a85350;color:#fff}
+.accion-btn.ok{background:#6aa972;color:#fff}
+.accion-btn.cancelar{background:#b8b8b8;color:#333}
+
 /* Tabla */
-.tabla-actividades{flex:1;overflow-x:auto;padding:20px;background:rgba(255,255,255,.85);border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,.1)}
-.tabla-con-borde{ border-top:4px solid #cdbfb6; border-radius:12px; }
+.tabla-actividades{overflow-x:auto;padding:20px;background:rgba(255,255,255,.85);border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,.1)}
 table{width:100%;border-collapse:collapse;font-size:.9rem}
 th,td{padding:10px;text-align:center;border-bottom:1px solid #4f6281}
 th{background:#4f6281;color:#fff;font-weight:bold;white-space:nowrap}
@@ -582,14 +694,17 @@ tr:hover{background:#f1f1f1}
 tr.selected{outline:3px solid #3c5070;outline-offset:-3px}
 .cell-input{width:100%;padding:6px 8px;border:2px solid #3c5070;border-radius:6px;background:#f0f0f0;font-size:.9rem;box-sizing:border-box}
 
-/* Botones generales */
-.acciones{display:flex;gap:12px;margin-bottom:15px}
-.accion-btn{padding:10px 20px;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:.2s}
-.accion-btn:hover{opacity:.92}
-.accion-btn{background:#849cc4;color:#252525}
-.accion-btn.eliminar{background:#a85350;color:#fff}
-.accion-btn.ok{background:#6aa972;color:#fff}
-.accion-btn.cancelar{background:#b8b8b8;color:#333}
+/* Radio personalizado */
+input[type="radio"]{
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  width:18px;height:18px;border:2px solid #3c507d;border-radius:50%;
+  background:#fff;position:relative;cursor:pointer;transition:.2s;
+}
+input[type="radio"]:checked{background:#3c507d;border-color:#3c507d}
+input[type="radio"]:checked::after{
+  content:"";position:absolute;top:4px;left:4px;width:8px;height:8px;
+  background:#fff;border-radius:50%;
+}
 
 /* Paginación */
 .pagination-container{margin-top:20px;display:flex;justify-content:center;align-items:center;padding:10px 0}

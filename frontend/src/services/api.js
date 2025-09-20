@@ -1,44 +1,50 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Configuración base del API
-const API_BASE_URL = 'http://localhost:3000';
+// 1) Si definiste VITE_API_URL en tu .env o en Vercel, la usa.
+// 2) Si no, usa el dominio actual del navegador + /api (funciona en Vercel Functions).
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.origin.replace(/\/$/, '')}/api`;
 
-console.log('🔧 API configurada con URL:', API_BASE_URL);
+console.log('🔎 api baseURL =', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 segundos de timeout
+  timeout: 10000, // 10 segundos
 });
 
-// Interceptor para agregar headers básicos (sin autenticación)
+// Interceptor para log de requests
 api.interceptors.request.use(
   (config) => {
-    console.log('� Request sin autenticación:', config.method?.toUpperCase(), config.url);
+    console.log(
+      '➡️ Request:',
+      (config.method || 'GET').toUpperCase(),
+      config.baseURL + config.url
+    );
     return config;
   },
   (error) => {
-    console.error('❌ Error en interceptor de request:', error);
+    console.error('❌ Error en request:', error);
     return Promise.reject(error);
   }
 );
 
-// Interceptor para manejo de errores
+// Interceptor para log de responses y errores
 api.interceptors.response.use(
   (response) => {
-    console.log('✅ Response exitosa:', response.status, response.data);
+    console.log('✅ Response:', response.status, response.config.url);
     return response;
   },
   (error) => {
     console.error('❌ Error en response:', {
       status: error.response?.status,
       data: error.response?.data,
-      message: error.message
+      message: error.message,
     });
-    
     return Promise.reject(error);
   }
 );

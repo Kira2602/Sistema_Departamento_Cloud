@@ -2,29 +2,16 @@ const { supabase } = require('../_lib/supabase');
 
 module.exports = async (req, res) => {
   const { id } = req.query;
-
-  if (!id) {
-    return res.status(400).json({ error: 'Falta parámetro id' });
-  }
+  if (!id) return res.status(400).json({ error: 'Falta parámetro id' });
 
   if (req.method === 'GET') {
-    const { data, error } = await supabase
-      .from('cloud')
-      .select('*')
-      .eq('id', id)
-      .single();
-
+    const { data, error } = await supabase.from('cloud').select('*').eq('id', id).single();
     if (error) return res.status(404).json({ error: 'Recurso no encontrado' });
     return res.status(200).json(data);
   }
 
   if (req.method === 'PUT') {
-    const { data, error } = await supabase
-      .from('cloud')
-      .update(req.body)
-      .eq('id', id)
-      .select();
-
+    const { data, error } = await supabase.from('cloud').update(req.body).eq('id', id).select();
     if (error) return res.status(400).json({ error: error.message });
     return res.status(200).json(data[0]);
   }

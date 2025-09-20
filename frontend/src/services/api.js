@@ -1,7 +1,7 @@
-// src/services/api.js
+// frontend/src/services/api.js
 import axios from 'axios';
 
-// Usa la variable si existe; si no, mismo dominio + /api (Vercel)
+// Usa VITE_API_URL si existe; si no, mismo dominio + /api (Vercel)
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   `${window.location.origin.replace(/\/$/, '')}/api`;

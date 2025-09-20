@@ -108,89 +108,93 @@
 </template>
 
 <script>
-import Swal from "sweetalert2";
+import Swal from 'sweetalert2'
+
+// === Mixin de colores para TODAS las alertas de este componente ===
+const swal = Swal.mixin({
+  background: '#fff7f7',
+  color: '#3c507d',
+  confirmButtonColor: '#e0c58f', // dorado suave
+  cancelButtonColor: '#b8b8b8',  // gris suave
+  confirmButtonText: 'Aceptar',
+  cancelButtonText: 'Cancelar'
+})
 
 export default {
-  name: "AgregarPopup",
+  name: 'AgregarPopup',
   emits: ['close', 'guardar'],
   data() {
     return {
       step: 1,
       form: {
-        codigo: "",
-        proveedor: "",
-        servicio: "",
-        idRecurso: "",
-        region: "",
-        estado: "",
-        responsable: "",
-        costo: "",
-        fechaInicio: "",
-        fechaFin: "",
-        garantia: "",
-        notas: "",
-      },
-    };
+        codigo: '',
+        proveedor: '',
+        servicio: '',
+        idRecurso: '',
+        region: '',
+        estado: '',
+        responsable: '',
+        costo: '',
+        fechaInicio: '',
+        fechaFin: '',
+        garantia: '',
+        notas: ''
+      }
+    }
   },
   methods: {
     goToStep(num) {
-      this.step = num;
+      this.step = num
     },
     submitForm() {
       // Validar campos requeridos
-      const requiredFields = ['codigo', 'proveedor', 'servicio', 'idRecurso', 'estado'];
-      const missingFields = requiredFields.filter(field => !this.form[field]?.trim());
-      
+      const requiredFields = ['codigo', 'proveedor', 'servicio', 'idRecurso', 'estado']
+      const missingFields = requiredFields.filter(field => !this.form[field]?.trim())
+
       if (missingFields.length > 0) {
-        Swal.fire({
+        swal.fire({
           icon: 'warning',
           title: 'Campos requeridos',
-          text: 'Por favor completa todos los campos obligatorios.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
-        });
-        return;
+          text: 'Por favor completa todos los campos obligatorios.'
+        })
+        return
       }
 
       // Validar costo si está presente
       if (this.form.costo && isNaN(parseFloat(this.form.costo))) {
-        Swal.fire({
+        swal.fire({
           icon: 'warning',
           title: 'Costo inválido',
-          text: 'El costo debe ser un número válido.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
-        });
-        return;
+          text: 'El costo debe ser un número válido.'
+        })
+        return
       }
 
       // Validar fechas si están presentes
       if (this.form.fechaInicio && this.form.fechaFin) {
-        const fechaInicio = new Date(this.form.fechaInicio);
-        const fechaFin = new Date(this.form.fechaFin);
-        
+        const fechaInicio = new Date(this.form.fechaInicio)
+        const fechaFin = new Date(this.form.fechaFin)
+
         if (fechaFin <= fechaInicio) {
-          Swal.fire({
+          swal.fire({
             icon: 'warning',
             title: 'Fechas inválidas',
-            text: 'La fecha de fin debe ser posterior a la fecha de inicio.',
-            background: '#fff7f7',
-            color: '#3c507d',
-            confirmButtonColor: '#e0c58f'
-          });
-          return;
+            text: 'La fecha de fin debe ser posterior a la fecha de inicio.'
+          })
+          return
         }
       }
 
-      console.log("Formulario enviado:", this.form);
-      
+      console.log('Formulario enviado:', this.form)
+
       // Emitir el evento con los datos del formulario
-      this.$emit('guardar', { ...this.form });
-    },
-  },
-};
+      this.$emit('guardar', { ...this.form })
+
+      // Feedback de éxito (opcional)
+      // swal.fire({ icon: 'success', title: 'Datos listos', text: 'Se enviaron los datos al componente padre.' })
+    }
+  }
+}
 </script>
 
 <style scoped>

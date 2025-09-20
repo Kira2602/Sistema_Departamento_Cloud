@@ -254,6 +254,16 @@ import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
+// === Mixin de colores para TODAS las alertas de este componente ===
+const swal = Swal.mixin({
+  background: '#fff7f7',
+  color: '#3c507d',
+  confirmButtonColor: '#e0c58f', // dorado suave
+  cancelButtonColor: '#b8b8b8',  // gris suave
+  confirmButtonText: 'Aceptar',
+  cancelButtonText: 'Cancelar'
+})
+
 export default {
   name: 'ABMCloud',
   components: { NavbarComponent, AgregarPopup },
@@ -357,13 +367,10 @@ export default {
       } catch (error) {
         let errorMessage = 'No se pudieron cargar los recursos.'
         if (error.response?.data?.error) errorMessage = error.response.data.error
-        Swal.fire({
+        swal.fire({
           icon: 'error',
           title: 'Error al cargar recursos',
-          text: errorMessage,
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
+          text: errorMessage
         })
       } finally {
         this.loading = false
@@ -377,36 +384,26 @@ export default {
         const nuevoRecurso = mapBackendToFrontend(response)
         this.recursos.unshift(nuevoRecurso)
         this.isAgregarOpen = false
-        Swal.fire({
+        swal.fire({
           icon: 'success',
           title: 'Recurso registrado',
-          text: 'El recurso se ha agregado correctamente.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f',
-          confirmButtonText: 'Aceptar'
+          text: 'El recurso se ha agregado correctamente.'
         })
       } catch (error) {
-        Swal.fire({
+        swal.fire({
           icon: 'error',
           title: 'Error al crear recurso',
-          text: error.response?.data?.error || 'No se pudo crear el recurso.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
+          text: error.response?.data?.error || 'No se pudo crear el recurso.'
         })
       }
     },
 
     onModificar() {
       if (this.selectedIndex === null || this.selectedIndex === -1) {
-        return Swal.fire({
+        return swal.fire({
           icon: 'info',
           title: 'Selecciona un registro',
-          text: 'Por favor selecciona una fila para modificar.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
+          text: 'Por favor selecciona una fila para modificar.'
         })
       }
       this.editMode = true
@@ -414,49 +411,43 @@ export default {
     },
 
     async onGuardarCambios() {
-      const req = ['codigo', 'proveedor', 'servicio', 'idRecurso']
-      const falta = req.find(k => !String(this.editedRow[k] || '').trim())
+      const req = ['codigo', 'proveedor', 'servicio', 'idRecurso'];
+      const falta = req.find(k => !String(this.editedRow[k] || '').trim());
       if (falta) {
-        return Swal.fire({
+        return swal.fire({
           icon: 'warning',
           title: 'Completa los campos',
-          text: 'Revisa código, proveedor, servicio e ID de recurso.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
-        })
+          text: 'Revisa código, proveedor, servicio e ID de recurso.'
+        });
       }
 
       try {
-        const backendData = mapFrontendToBackend(this.editedRow)
-        const recursoId = this.recursosFiltrados[this.selectedIndex].id
-        const response = await cloudService.updateResource(recursoId, backendData)
-        const recursoActualizado = mapBackendToFrontend(response.data)
+        const backendData = mapFrontendToBackend(this.editedRow);
+        const recursoId = this.recursosFiltrados[this.selectedIndex].id;
+
+        const payload = await cloudService.updateResource(recursoId, backendData);
+        // Soporta ambas respuestas: {…}  o  { success:true, data:{…} }
+        const updated = payload?.data ?? payload;
+        const recursoActualizado = mapBackendToFrontend(updated);
 
         // Reemplaza por índice REAL en this.recursos
-        const realIdx = this.recursos.findIndex(r => r.id === recursoId)
-        if (realIdx !== -1) this.recursos.splice(realIdx, 1, recursoActualizado)
+        const realIdx = this.recursos.findIndex(r => r.id === recursoId);
+        if (realIdx !== -1) this.recursos.splice(realIdx, 1, recursoActualizado);
 
-        this.editMode = false
-        this.editedRow = null
+        this.editMode = false;
+        this.editedRow = null;
 
-        Swal.fire({
+        swal.fire({
           icon: 'success',
           title: 'Cambios guardados',
-          text: 'El recurso fue actualizado correctamente.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
-        })
+          text: 'El recurso fue actualizado correctamente.'
+        });
       } catch (error) {
-        Swal.fire({
+        swal.fire({
           icon: 'error',
           title: 'Error al actualizar',
-          text: error.response?.data?.error || 'No se pudo actualizar el recurso.',
-          background: '#fff7f7',
-          color: '#3c507d',
-          confirmButtonColor: '#e0c58f'
-        })
+          text: error.response?.data?.error || 'No se pudo actualizar el recurso.'
+        });
       }
     },
 
@@ -468,38 +459,35 @@ export default {
     async onEliminar() {
       // Verifica selección
       if (this.selectedIndex === -1 || this.selectedIndex === null) {
-        return Swal.fire({
+        return swal.fire({
+          icon: 'warning',
           title: 'Atención',
-          text: 'Por favor selecciona un recurso para eliminar',
-          icon: 'warning'
+          text: 'Por favor selecciona un recurso para eliminar'
         })
       }
 
       const recurso = this.recursosFiltrados[this.selectedIndex]
       if (!recurso?.id) {
-        return Swal.fire({
+        return swal.fire({
+          icon: 'error',
           title: 'Error',
-          text: 'No se puede eliminar el recurso: ID no válido',
-          icon: 'error'
+          text: 'No se puede eliminar el recurso: ID no válido'
         })
       }
 
       try {
-        const result = await Swal.fire({
+        const result = await swal.fire({
           title: '¿Estás seguro?',
           text: `¿Quieres eliminar el recurso "${recurso.codigo || recurso.id}"?`,
           icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#d33',
-          cancelButtonColor: '#3085d6',
-          confirmButtonText: 'Sí, eliminar',
-          cancelButtonText: 'Cancelar'
+          showCancelButton: true
+          // Colores vienen del mixin (confirm/cancel)
         })
 
         if (result.isConfirmed) {
           const response = await cloudService.deleteResource(recurso.id)
           if (response.success) {
-            await Swal.fire({
+            await swal.fire({
               title: '¡Eliminado!',
               text: 'El recurso ha sido eliminado correctamente',
               icon: 'success',
@@ -514,10 +502,10 @@ export default {
           }
         }
       } catch (error) {
-        Swal.fire({
+        swal.fire({
+          icon: 'error',
           title: 'Error',
-          text: `Error al eliminar el recurso: ${error.message}`,
-          icon: 'error'
+          text: `Error al eliminar el recurso: ${error.message}`
         })
       }
     },

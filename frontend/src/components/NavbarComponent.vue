@@ -31,16 +31,29 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import Swal from 'sweetalert2'
 
-const router = useRouter()
+// Mismo esquema de colores que en ABMCloud.vue
+const swal = Swal.mixin({
+  background: '#fff7f7',
+  color: '#3c507d',
+  confirmButtonColor: '#e0c58f', // dorado suave
+  cancelButtonColor: '#b8b8b8',  // gris suave
+  confirmButtonText: 'Aceptar',
+  cancelButtonText: 'Cancelar'
+})
 
 function logout() {
-  // 👉 Opción 1: siempre lleva al login (/)
-  router.push('/')
-
-  // 👉 Opción 2: volver a la vista anterior (historial del navegador)
-  // router.back()
+  swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Tu sesión se cerrará y volverás al inicio.',
+    icon: 'warning',
+    showCancelButton: true
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.href = 'https://calidad-software-frontend.pages.dev'
+    }
+  })
 }
 </script>
 

@@ -65,7 +65,7 @@
             <option value="">Todos</option>
             <option>Activo</option>
             <option>Inactivo</option>
-            <option>En actualización</option>
+            <option>En Actualización</option>
           </select>
         </div>
 
@@ -173,7 +173,7 @@
                   <select class="cell-input" v-model="editedRow.estado">
                     <option>Activo</option>
                     <option>Inactivo</option>
-                    <option>En actualización</option>
+                    <option>En Actualización</option>
                   </select>
                 </td>
                 <td><input class="cell-input" v-model="editedRow.responsable" /></td>

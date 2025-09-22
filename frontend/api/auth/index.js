@@ -14,7 +14,6 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'GET') {
-    // ejemplo: verificar sesión actual
     const { data, error } = await supabase.auth.getSession();
     if (error) return res.status(400).json({ error: error.message });
     return res.status(200).json(data);

@@ -52,6 +52,7 @@
                 <option value="">Selecciona...</option>
                 <option>Activo</option>
                 <option>Inactivo</option>
+                <option>En actualización</option>
               </select>
             </div>
             <div class="form-group">

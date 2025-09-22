@@ -313,12 +313,13 @@ export default {
         )
       }
 
-      // Estado exacto
+      // Estado (insensible a acentos/mayúsculas/espacios)
       if (this.filtroEstado && this.filtroEstado !== '') {
-        recursos = recursos.filter(recurso => recurso.estado === this.filtroEstado)
+        const target = this.norm(this.filtroEstado)
+        recursos = recursos.filter(recurso => this.norm(recurso.estado) === target)
       }
 
-      // Responsable exacto
+      // Responsable exacto (puedes usar norm() si quieres tolerancia)
       if (this.filtroResponsable && this.filtroResponsable !== '') {
         recursos = recursos.filter(recurso => recurso.responsable === this.filtroResponsable)
       }
@@ -358,6 +359,15 @@ export default {
   },
   methods: {
     onlyDate(d) { const nd = new Date(d); nd.setHours(0,0,0,0); return nd },
+
+    // Normaliza cadenas: quita acentos, pasa a minúsculas y recorta
+    norm(str) {
+      return String(str ?? '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .trim()
+    },
 
     async loadRecursos() {
       this.loading = true

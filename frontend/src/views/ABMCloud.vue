@@ -19,7 +19,6 @@
         </div>
 
         <div class="lottie-container1 hero-lottie">
-          <!-- Usa dotlottie-player para .lottie -->
           <dotlottie-player
             src="https://lottie.host/1db45383-d967-49f1-960e-5f2cdda11099/AOWyIri1vh.lottie"
             autoplay
@@ -30,7 +29,7 @@
       </div>
     </section>
 
-    <!-- ===== CONTENEDOR DE FILTROS (fuera del contenedor de la tabla) ===== -->
+    <!-- ===== CONTENEDOR DE FILTROS ===== -->
     <div class="panel-filtros">
       <div class="filtros-toolbar">
         <div class="filtros-head">
@@ -63,9 +62,9 @@
           <label>Estado</label>
           <select v-model="filtroEstado" class="custom-select">
             <option value="">Todos</option>
-            <option>Activo</option>
-            <option>Inactivo</option>
-            <option>En Actualización</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+            <option value="En Actualización">En Actualización</option>
           </select>
         </div>
 
@@ -86,7 +85,6 @@
 
     <!-- TABLA DE RECURSOS -->
     <div class="historial-actividades">
-      <!-- Botones de acción -->
       <div class="acciones">
         <button class="btn accion-btn" @click="isAgregarOpen = true">Agregar</button>
 
@@ -171,9 +169,9 @@
                 <td><input class="cell-input" v-model="editedRow.region" /></td>
                 <td>
                   <select class="cell-input" v-model="editedRow.estado">
-                    <option>Activo</option>
-                    <option>Inactivo</option>
-                    <option>En Actualización</option>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                    <option value="En Actualización">En Actualización</option>
                   </select>
                 </td>
                 <td><input class="cell-input" v-model="editedRow.responsable" /></td>
@@ -213,7 +211,6 @@
           >
             <a class="page-link page-prev">«</a>
           </li>
-
           <li
             v-for="p in totalPages"
             :key="p"
@@ -223,7 +220,6 @@
           >
             <a class="page-link">{{ p }}</a>
           </li>
-
           <li
             class="page-item"
             :class="{ disabled: currentPage === totalPages }"

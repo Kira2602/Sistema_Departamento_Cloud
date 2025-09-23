@@ -39,7 +39,7 @@
         </div>
 
         <div class="filtro-inline f-col-4">
-          <label>Buscar (código o ID de recurso)</label>
+          <label>Buscar Registro</label>
           <input
             type="text"
             v-model="filtroIdRecurso"

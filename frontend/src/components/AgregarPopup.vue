@@ -56,7 +56,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="costo">Costo mensual estimado</label>
+              <label for="costo">Costo mensual estimado (USD)</label>
               <input id="costo" v-model="form.costo" type="number" step="0.01" placeholder="0.00" />
             </div>
             <div class="form-group">

@@ -191,7 +191,7 @@
                 <td>{{ r.region }}</td>
                 <td>{{ r.estado }}</td>
                 <td>{{ r.responsable }}</td>
-                <td>{{ r.costo }}</td>
+                <td>{{ formatUSD(r.costo) }}</td>
                 <td>{{ r.fechaInicio }}</td>
                 <td>{{ r.fechaFin }}</td>
                 <td>{{ r.garantia }}</td>
@@ -276,7 +276,7 @@ export default {
       user: null,
 
       // filtros
-      filtroIdRecurso: '',     // texto: código o idRecurso
+      filtroIdRecurso: '',     // texto: ahora busca en TODOS los campos
       filtroProveedor: '',     // texto
       filtroEstado: '',        // select
       filtroResponsable: '',   // select
@@ -292,13 +292,28 @@ export default {
     recursosFiltrados() {
       let recursos = this.recursos
 
-      // Buscar por idRecurso o codigo (contiene)
+      // 🔎 Buscar por texto en TODOS los campos relevantes
       if (this.filtroIdRecurso && this.filtroIdRecurso.trim() !== '') {
-        const q = this.filtroIdRecurso.toLowerCase().trim()
-        recursos = recursos.filter(recurso =>
-          recurso.idRecurso?.toLowerCase().includes(q) ||
-          recurso.codigo?.toLowerCase().includes(q)
-        )
+        const q = this.norm(this.filtroIdRecurso)
+        recursos = recursos.filter(recurso => {
+          // Campos a considerar en la búsqueda global
+          const campos = [
+            recurso.id,               // por si quieres buscar por id interno
+            recurso.codigo,
+            recurso.idRecurso,
+            recurso.proveedor,
+            recurso.servicio,
+            recurso.region,
+            recurso.estado,
+            recurso.responsable,
+            recurso.costo,
+            recurso.fechaInicio,
+            recurso.fechaFin,
+            recurso.garantia,
+            recurso.notas
+          ]
+          return campos.some(v => this.norm(v).includes(q))
+        })
       }
 
       // Proveedor por texto (contiene)
@@ -534,6 +549,12 @@ export default {
       this.selectedIndex = -1
       this.currentPage = 1
     },
+    formatUSD(value) {
+      if (value == null || value === '') return '-'
+      const num = parseFloat(value)
+      if (isNaN(num)) return value
+      return num.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+    },
 
     // paginación
     changePage(p) {
@@ -615,7 +636,6 @@ export default {
     background-attachment: fixed;
   }
 }
-/* Reduce motion */
 @media (prefers-reduced-motion: reduce){
   .hero-parallax__bg{ transform: none; }
   .hero-parallax__scrim{ background: rgba(0,0,0,0.35); }

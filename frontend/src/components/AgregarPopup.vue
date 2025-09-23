@@ -91,7 +91,7 @@
             </div>
             <div class="form-group">
               <label for="garantia">Garantía</label>
-              <input id="garantia" v-model="form.garantia" type="text" />
+              <input id="garantia" v-model="form.garantia" type="text" placeholder="Ej. 1 año, 3 años, 5 años"/>
             </div>
             <div class="form-group">
               <label for="notas">Notas</label>

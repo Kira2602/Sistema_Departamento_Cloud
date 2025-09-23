@@ -553,8 +553,9 @@ export default {
       if (value == null || value === '') return '-'
       const num = parseFloat(value)
       if (isNaN(num)) return value
-      return num.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+      return 'USD ' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     },
+
 
     // paginación
     changePage(p) {

@@ -191,7 +191,7 @@
                 <td>{{ r.region }}</td>
                 <td>{{ r.estado }}</td>
                 <td>{{ r.responsable }}</td>
-                <td>{{ formatUSD(r.costo) }}</td>
+                <td class="currency">{{ formatUSD(r.costo) }}</td>
                 <td>{{ r.fechaInicio }}</td>
                 <td>{{ r.fechaFin }}</td>
                 <td>{{ r.garantia }}</td>
@@ -551,10 +551,17 @@ export default {
     },
     formatUSD(value) {
       if (value == null || value === '') return '-'
-      const num = parseFloat(value)
-      if (isNaN(num)) return value
-      return 'USD ' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      // Limpia cualquier símbolo o texto previo ($, espacios, etc.)
+      const num = Number(String(value).replace(/[^\d.-]/g, ''))
+      if (Number.isNaN(num)) return String(value)
+      const formatted = num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+      // Forzamos prefijo USD (sin depender de toLocaleString con currency)
+      return `USD ${formatted}`
     },
+
 
 
     // paginación
@@ -736,6 +743,11 @@ input[type="radio"]:checked::after{
 .footer{background:#112250;padding:30px 10px;text-align:center;color:#fff;margin-top:30px;border-radius:8px}
 .footer-content{font-size:14px}
 
+/* Evita que alguna regla global anteponga el símbolo $ */
+td.currency::before {
+  content: none !important;
+}
+
 /* Responsive */
 @media (max-width: 1024px){
   .hero-inner{ padding: 12px 16px; }
@@ -750,4 +762,5 @@ input[type="radio"]:checked::after{
   .f-col-4, .f-col-2 { grid-column: 1 / -1; }
   .filtros-head{ justify-content: flex-start; gap:8px; }
 }
+
 </style>

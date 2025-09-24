@@ -80,8 +80,7 @@ nav {
   width: 100%;
   z-index: 50;
   font-family: "Poppins", sans-serif;
-
-  background: rgba(60, 80, 112, 0.85);
+  background: #566782;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);

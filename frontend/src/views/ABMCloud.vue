@@ -102,58 +102,7 @@
       </div>
     </div>
 
-    <!-- ===== VISOR DE DOCUMENTO EMBEBIDO (BPMN) ===== -->
-    <section v-if="showBPMN" class="doc-viewer">
-      <div class="doc-viewer__toolbar">
-        <div class="doc-viewer__title">
-          <strong>Diagrama BPMN</strong>
-          <span class="doc-viewer__subtitle">src/pdf/BPMN_Cloud.pdf</span>
-        </div>
-        <div class="doc-viewer__actions">
-          <a
-            class="btn accion-btn descargar-btn"
-            :href="bpmnUrl"
-            download
-            title="Descargar PDF"
-          >Descargar</a>
-
-          <button
-            class="btn accion-btn ok"
-            @click="toggleViewerSize"
-            :title="isViewerExpanded ? 'Contraer visor' : 'Expandir visor'"
-          >
-            {{ isViewerExpanded ? 'Contraer' : 'Expandir' }}
-          </button>
-
-          <button
-            class="btn accion-btn cancelar"
-            @click="closeBPMNViewer"
-            title="Cerrar visor"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-
-      <div
-        class="doc-viewer__framewrap"
-        :style="{ height: viewerHeight }"
-      >
-        <iframe
-          class="doc-viewer__iframe"
-          :src="bpmnIframeSrc"
-          title="BPMN PDF Viewer"
-        ></iframe>
-        <div class="doc-viewer__fallback">
-          <p>
-            Si el visor no carga, puedes abrir el documento aquí:
-            <a :href="bpmnUrl" target="_blank" rel="noopener">Abrir BPMN en una pestaña nueva</a>
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- TABLA DE RECURSOS -->
+    <!-- ===== TABLA DE RECURSOS ===== -->
     <div class="historial-actividades">
       <div class="acciones">
         <button class="btn accion-btn" @click="isAgregarOpen = true">Agregar</button>
@@ -312,6 +261,45 @@
       @close="isAgregarOpen = false"
       @guardar="onAgregarRecurso"
     />
+
+    <!-- ===== MODAL: VISOR BPMN ===== -->
+    <div
+      v-if="showBPMN"
+      class="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bpmnModalTitle"
+      @click.self="closeBPMNViewer"
+    >
+      <div
+        class="modal-dialog"
+        :class="{ expanded: isViewerExpanded }"
+        ref="modalDialog"
+        tabindex="-1"
+      >
+        <div class="modal-toolbar">
+          <div class="modal-title">
+            <strong id="bpmnModalTitle">Diagrama BPMN</strong>
+            <span class="modal-subtitle">src/pdf/BPMN_Cloud.pdf</span>
+          </div>
+          <div class="modal-actions">
+            <a class="btn accion-btn descargar-btn" :href="bpmnUrl" download>Descargar</a>
+            <button class="btn accion-btn ok" @click="toggleViewerSize">
+              {{ isViewerExpanded ? 'Contraer' : 'Expandir' }}
+            </button>
+            <button class="btn accion-btn cancelar" @click="closeBPMNViewer">Cerrar</button>
+          </div>
+        </div>
+
+        <div class="modal-body">
+          <iframe
+            class="modal-iframe"
+            :src="bpmnIframeSrc"
+            title="BPMN PDF Viewer"
+          ></iframe>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -322,7 +310,7 @@ import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
-// Importa el PDF desde src/pdf usando Vite (?url) para obtener su URL final
+// PDF dentro de src/pdf
 import BPMN_PDF from '@/pdf/BPMN_Cloud.pdf?url'
 
 const swal = Swal.mixin({
@@ -361,10 +349,9 @@ export default {
       // Botones superiores
       activeTopAction: null, // 'doc' | 'bpmn' | null
 
-      // Visor BPMN
+      // Modal/Visor BPMN
       showBPMN: false,
       isViewerExpanded: false,
-      viewerHeight: '70vh',
       bpmnUrl: BPMN_PDF
     }
   },
@@ -413,12 +400,20 @@ export default {
     totalPages() { return Math.max(1, Math.ceil(this.recursosFiltrados.length / this.pageSize)) }
   },
   async mounted() {
+    // Lottie
     if (!customElements.get('dotlottie-player')) {
       const s = document.createElement('script')
       s.src = 'https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js'
       document.head.appendChild(s)
     }
+    // Esc para cerrar modal
+    window.addEventListener('keydown', this.onKeydownEsc)
     await this.loadRecursos()
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.onKeydownEsc)
+    // por si queda abierto
+    document.documentElement.classList.remove('modal-open')
   },
   methods: {
     onlyDate(d) { const nd = new Date(d); nd.setHours(0,0,0,0); return nd },
@@ -574,18 +569,21 @@ export default {
     openBPMNViewer() {
       this.activeTopAction = 'bpmn'
       this.showBPMN = true
+      // bloquear scroll del fondo
+      document.documentElement.classList.add('modal-open')
+      this.$nextTick(() => this.$refs.modalDialog?.focus())
     },
     closeBPMNViewer() {
       this.showBPMN = false
       this.isViewerExpanded = false
-      this.viewerHeight = '70vh'
-      if (this.activeTopAction === 'bpmn') {
-        this.activeTopAction = null
-      }
+      document.documentElement.classList.remove('modal-open')
+      if (this.activeTopAction === 'bpmn') this.activeTopAction = null
     },
     toggleViewerSize() {
       this.isViewerExpanded = !this.isViewerExpanded
-      this.viewerHeight = this.isViewerExpanded ? '90vh' : '70vh'
+    },
+    onKeydownEsc(e) {
+      if (e.key === 'Escape' && this.showBPMN) this.closeBPMNViewer()
     }
   }
 }
@@ -595,6 +593,7 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 * { font-family: 'Poppins', sans-serif; padding: 0; margin: 0; }
 :global(body) { padding-top: 120px; }
+:global(html.modal-open), :global(body.modal-open) { overflow: hidden; }
 
 /* ===== HERO con parallax 3D ===== */
 .hero{
@@ -635,23 +634,22 @@ export default {
 
 /* ===== Botonera superior (IDEF0 / BPMN) en una fila ===== */
 .top-actions{
-  grid-column: 1 / -1;           /* ocupa todo el ancho de la grid */
+  grid-column: 1 / -1;
   display: flex;
-  gap: 12px;                      /* ESPACIO entre botones */
+  gap: 12px;
   align-items: center;
   margin-bottom: 2px;
 }
 .accion-btn.scloud-btn{
-  /* quitar el min-width gigante para que ajuste al label */
   min-width: auto;
-  padding: 10px 16px;             /* más compacto */
+  padding: 10px 16px;
   background:#3c5070;
   color:#fff;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   border: 2px solid transparent;
-  white-space: nowrap;            /* no romper texto */
+  white-space: nowrap;
 }
 .accion-btn.scloud-btn.active{
   background:#566b94;
@@ -689,32 +687,44 @@ export default {
 }
 .custom-select:focus,.custom-input:focus{ outline:none; border-color:#4f6281; box-shadow:0 0 0 3px rgba(79,98,129,.15) }
 
-/* ===== Visor de documento ===== */
-.doc-viewer{
-  max-width: 1200px;
-  margin: 0 auto 16px;
+/* ===== MODAL (popup) ===== */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 16, 28, .45);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+  padding: 12px;
+}
+.modal-dialog{
+  width: min(90vw, 1200px);
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
   background: #f7f5f3;
   border: 1px solid #d8cfc8;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
   overflow: hidden;
+  outline: none;
 }
-.doc-viewer__toolbar{
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 10px 12px;
-  background: #e7ddd7; border-bottom: 1px solid #d8cfc8;
+.modal-dialog.expanded{
+  width: min(96vw, 1600px);
+  height: 92vh;
 }
-.doc-viewer__title{ display:flex; flex-direction: column; }
-.doc-viewer__title strong{ color:#2b3b57; }
-.doc-viewer__subtitle{ color:#6f737a; font-size:.8rem; }
-.doc-viewer__actions{ display:flex; gap: 10px; align-items:center; }
+.modal-toolbar{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:10px 12px; background:#e7ddd7; border-bottom:1px solid #d8cfc8;
+}
+.modal-title{ display:flex; flex-direction:column; }
+.modal-title strong{ color:#2b3b57; }
+.modal-subtitle{ color:#6f737a; font-size:.8rem; }
+.modal-actions{ display:flex; gap:10px; align-items:center; }
 .descargar-btn{ background:#4f6281 !important; color:#fff !important; }
-.doc-viewer__framewrap{ width: 100%; transition: height .25s ease; background: #fff; position: relative; }
-.doc-viewer__iframe{ width: 100%; height: 100%; border: none; display: block; }
-.doc-viewer__fallback{
-  position: absolute; inset: auto 0 8px 0; text-align: center; font-size: .9rem; color: #444; pointer-events: none;
-}
-.doc-viewer__fallback a{ pointer-events: auto; }
+.modal-body{ flex:1; background:#fff; }
+.modal-iframe{ width:100%; height:100%; border:0; display:block; }
 
 /* ===== Contenedor principal de la tabla/acciones/paginación ===== */
 .historial-actividades{
@@ -785,8 +795,7 @@ td.currency::before { content: none !important; }
   .filtros-toolbar{ grid-template-columns: repeat(1, 1fr); }
   .f-col-4, .f-col-2 { grid-column: 1 / -1; }
   .filtros-head{ justify-content: flex-start; gap:8px; }
-  .top-actions{ flex-wrap: wrap; } /* si no entran, pasan a dos líneas con buen gap */
-  .doc-viewer__toolbar{ flex-direction: column; align-items: stretch; gap: 8px; }
-  .doc-viewer__actions{ justify-content: flex-start; flex-wrap: wrap; }
+  .top-actions{ flex-wrap: wrap; }
+  .modal-dialog{ width: 96vw; height: 88vh; }
 }
 </style>

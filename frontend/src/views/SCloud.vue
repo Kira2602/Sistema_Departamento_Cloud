@@ -9,7 +9,7 @@
       <!-- Navigation Sidebar -->
       <div class="scloud-sidebar">
         <div class="sidebar-header">
-          <img src="../img/logoHagenCo.png" alt="Company Logo" class="company-logo" />
+          <img src="../img/LogoHagenCo.png" alt="Company Logo" class="company-logo" />
         </div>
         
         <div class="sidebar-content">

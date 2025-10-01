@@ -32,6 +32,7 @@
     <!-- ===== CONTENEDOR DE FILTROS ===== -->
     <div class="panel-filtros">
       <div class="filtros-toolbar">
+             <button class="btn accion-btn scloud-btn" @click="goToSCloud" style="margin-right: 16px;">Documentacion </button>
         <div class="filtros-head">
           <span class="filtros-label">Filtros:</span>
           <button class="btn accion-btn ok" @click="aplicarFiltros">Aplicar</button>
@@ -581,6 +582,10 @@ export default {
         event.target.closest('button')
       ) return
       this.selectedIndex = -1
+     },
+
+    goToSCloud() {
+      this.$router.push('/scloud')
     }
   }
 }
@@ -707,6 +712,7 @@ export default {
 .accion-btn.eliminar{background:#a85350;color:#fff}
 .accion-btn.ok{background:#6aa972;color:#fff}
 .accion-btn.cancelar{background:#b8b8b8;color:#333}
+.accion-btn.scloud-btn{background:#3c5070;color:#fff}
 
 /* Tabla */
 .tabla-actividades{overflow-x:auto;padding:20px;background:rgba(255,255,255,.85);border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,.1)}

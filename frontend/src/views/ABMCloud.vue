@@ -32,24 +32,24 @@
     <!-- ===== CONTENEDOR DE FILTROS ===== -->
     <div class="panel-filtros">
       <div class="filtros-toolbar">
-        <!-- Botones superiores con estado activo -->
-        <button
-          class="btn accion-btn scloud-btn"
-          :class="{ active: activeTopAction === 'doc' }"
-          @click="goToSCloud"
-          style="margin-right: 12px;"
-        >
-          IDEF0
-        </button>
+        <!-- Botonera superior en UNA fila -->
+        <div class="top-actions">
+          <button
+            class="btn accion-btn scloud-btn"
+            :class="{ active: activeTopAction === 'doc' }"
+            @click="goToSCloud"
+          >
+            IDEF0
+          </button>
 
-        <button
-          class="btn accion-btn scloud-btn"
-          :class="{ active: activeTopAction === 'bpmn' }"
-          @click="openBPMNViewer"
-          style="margin-right: 16px;"
-        >
-          BPMN
-        </button>
+          <button
+            class="btn accion-btn scloud-btn"
+            :class="{ active: activeTopAction === 'bpmn' }"
+            @click="openBPMNViewer"
+          >
+            BPMN
+          </button>
+        </div>
 
         <div class="filtros-head">
           <span class="filtros-label">Filtros:</span>
@@ -107,7 +107,7 @@
       <div class="doc-viewer__toolbar">
         <div class="doc-viewer__title">
           <strong>Diagrama BPMN</strong>
-          <span class="doc-viewer__subtitle">/docs/BPMN_RecursosCloud.pdf</span>
+          <span class="doc-viewer__subtitle">src/pdf/BPMN_Cloud.pdf</span>
         </div>
         <div class="doc-viewer__actions">
           <a
@@ -139,7 +139,6 @@
         class="doc-viewer__framewrap"
         :style="{ height: viewerHeight }"
       >
-        <!-- iFrame para PDF. Fallback: enlace si el navegador bloquea el embed -->
         <iframe
           class="doc-viewer__iframe"
           :src="bpmnIframeSrc"
@@ -323,8 +322,8 @@ import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
-// ⬇️ Si prefieres empaquetar el PDF en /src/assets (build con Vite):
-// import BPMN_PDF from '@/assets/docs/BPMN_RecursosCloud.pdf?url'
+// Importa el PDF desde src/pdf usando Vite (?url) para obtener su URL final
+import BPMN_PDF from '@/pdf/BPMN_Cloud.pdf?url'
 
 const swal = Swal.mixin({
   background: '#fff7f7',
@@ -360,20 +359,17 @@ export default {
       pageSize: 10,
 
       // Botones superiores
-      activeTopAction: null,                 // 'doc' | 'bpmn' | null
+      activeTopAction: null, // 'doc' | 'bpmn' | null
 
       // Visor BPMN
       showBPMN: false,
       isViewerExpanded: false,
       viewerHeight: '70vh',
-      bpmnUrl: '/docs/BPMN_RecursosCloud.pdf', // si lo pones en public/docs/
-      // bpmnUrl: BPMN_PDF,                     // <— descomenta si usas import desde src/assets
+      bpmnUrl: BPMN_PDF
     }
   },
   computed: {
     bpmnIframeSrc() {
-      // truco: añadir #zoom/scroll para una mejor UX (compatible con la mayoría de viewers)
-      // algunos navegadores soportan #view=FitH, otros no; mantenemos simple
       return `${this.bpmnUrl}#toolbar=1`
     },
     recursosFiltrados() {
@@ -572,13 +568,12 @@ export default {
     // ===== Acciones superiores / Visor =====
     goToSCloud() {
       this.activeTopAction = 'doc'
-      this.closeBPMNViewer() // al ir a documentacion, ocultamos el visor si estaba abierto
+      this.closeBPMNViewer()
       this.$router.push('/scloud')
     },
     openBPMNViewer() {
       this.activeTopAction = 'bpmn'
       this.showBPMN = true
-      // mantener la tabla visible más abajo; no scroll forzado por defecto
     },
     closeBPMNViewer() {
       this.showBPMN = false
@@ -638,56 +633,31 @@ export default {
 /* ===== Contenedor de filtros ===== */
 .panel-filtros{ max-width: 1200px; margin: 0 auto 12px; }
 
-/* ===== VISOR DE DOCUMENTO ===== */
-.doc-viewer{
-  max-width: 1200px;
-  margin: 0 auto 16px;
-  background: #f7f5f3;
-  border: 1px solid #d8cfc8;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.08);
-  overflow: hidden;
+/* ===== Botonera superior (IDEF0 / BPMN) en una fila ===== */
+.top-actions{
+  grid-column: 1 / -1;           /* ocupa todo el ancho de la grid */
+  display: flex;
+  gap: 12px;                      /* ESPACIO entre botones */
+  align-items: center;
+  margin-bottom: 2px;
 }
-.doc-viewer__toolbar{
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 10px 12px;
-  background: #e7ddd7; border-bottom: 1px solid #d8cfc8;
+.accion-btn.scloud-btn{
+  /* quitar el min-width gigante para que ajuste al label */
+  min-width: auto;
+  padding: 10px 16px;             /* más compacto */
+  background:#3c5070;
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border: 2px solid transparent;
+  white-space: nowrap;            /* no romper texto */
 }
-.doc-viewer__title{ display:flex; flex-direction: column; }
-.doc-viewer__title strong{ color:#2b3b57; }
-.doc-viewer__subtitle{ color:#6f737a; font-size:.8rem; }
-.doc-viewer__actions{ display:flex; gap: 10px; align-items:center; }
-.descargar-btn{ background:#4f6281 !important; color:#fff !important; }
-
-.doc-viewer__framewrap{
-  width: 100%;
-  transition: height .25s ease;
-  background: #fff;
-  position: relative;
-}
-.doc-viewer__iframe{
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
-}
-.doc-viewer__fallback{
-  position: absolute;
-  inset: auto 0 8px 0;
-  text-align: center;
-  font-size: .9rem;
-  color: #444;
-  pointer-events: none;
-}
-.doc-viewer__fallback a{ pointer-events: auto; }
-
-/* ===== Contenedor principal de la tabla/acciones/paginación ===== */
-.historial-actividades{
-  background:#d9cbc2;
-  padding:20px;
-  border-radius:15px;
-  max-width:1200px;
-  margin:0 auto;
+.accion-btn.scloud-btn.active{
+  background:#566b94;
+  color:#fff;
+  border-color:#2b3b57;
+  box-shadow:0 0 0 3px rgba(86,107,148,.18);
 }
 
 /* ===== Barra de filtros en GRID ===== */
@@ -719,7 +689,43 @@ export default {
 }
 .custom-select:focus,.custom-input:focus{ outline:none; border-color:#4f6281; box-shadow:0 0 0 3px rgba(79,98,129,.15) }
 
-/* Botones de acción */
+/* ===== Visor de documento ===== */
+.doc-viewer{
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  background: #f7f5f3;
+  border: 1px solid #d8cfc8;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+  overflow: hidden;
+}
+.doc-viewer__toolbar{
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 12px;
+  background: #e7ddd7; border-bottom: 1px solid #d8cfc8;
+}
+.doc-viewer__title{ display:flex; flex-direction: column; }
+.doc-viewer__title strong{ color:#2b3b57; }
+.doc-viewer__subtitle{ color:#6f737a; font-size:.8rem; }
+.doc-viewer__actions{ display:flex; gap: 10px; align-items:center; }
+.descargar-btn{ background:#4f6281 !important; color:#fff !important; }
+.doc-viewer__framewrap{ width: 100%; transition: height .25s ease; background: #fff; position: relative; }
+.doc-viewer__iframe{ width: 100%; height: 100%; border: none; display: block; }
+.doc-viewer__fallback{
+  position: absolute; inset: auto 0 8px 0; text-align: center; font-size: .9rem; color: #444; pointer-events: none;
+}
+.doc-viewer__fallback a{ pointer-events: auto; }
+
+/* ===== Contenedor principal de la tabla/acciones/paginación ===== */
+.historial-actividades{
+  background:#d9cbc2;
+  padding:20px;
+  border-radius:15px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+/* Botones de acción de la tabla */
 .acciones{ display:flex; gap:12px; margin-bottom:15px }
 .accion-btn{ padding:10px 20px; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:.2s }
 .accion-btn:hover{ opacity:.92 }
@@ -727,19 +733,6 @@ export default {
 .accion-btn.eliminar{ background:#a85350; color:#fff }
 .accion-btn.ok{ background:#6aa972; color:#fff }
 .accion-btn.cancelar{ background:#b8b8b8; color:#333 }
-
-/* Botones superiores (Documentación/BPMN) */
-.accion-btn.scloud-btn{
-  background:#3c5070; color:#fff;
-  padding:12px 28px; min-width: 200px;
-  display:inline-flex; align-items:center; justify-content:center;
-  border: 2px solid transparent;
-}
-.accion-btn.scloud-btn.active{
-  background:#566b94; color:#fff;
-  border-color:#2b3b57;
-  box-shadow:0 0 0 3px rgba(86,107,148,.18);
-}
 
 /* Tabla */
 .tabla-actividades{ overflow-x:auto; padding:20px; background:rgba(255,255,255,.85); border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,.1) }
@@ -792,6 +785,7 @@ td.currency::before { content: none !important; }
   .filtros-toolbar{ grid-template-columns: repeat(1, 1fr); }
   .f-col-4, .f-col-2 { grid-column: 1 / -1; }
   .filtros-head{ justify-content: flex-start; gap:8px; }
+  .top-actions{ flex-wrap: wrap; } /* si no entran, pasan a dos líneas con buen gap */
   .doc-viewer__toolbar{ flex-direction: column; align-items: stretch; gap: 8px; }
   .doc-viewer__actions{ justify-content: flex-start; flex-wrap: wrap; }
 }

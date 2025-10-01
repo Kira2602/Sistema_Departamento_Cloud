@@ -712,7 +712,16 @@ export default {
 .accion-btn.eliminar{background:#a85350;color:#fff}
 .accion-btn.ok{background:#6aa972;color:#fff}
 .accion-btn.cancelar{background:#b8b8b8;color:#333}
-.accion-btn.scloud-btn{background:#3c5070;color:#fff}
+/* Botón Documentación más largo */
+.accion-btn.scloud-btn{
+  background:#3c5070;
+  color:#fff;
+  padding:12px 28px;      /* más “gordito” */
+  min-width: 200px;       /* <- largo mínimo */
+  display:inline-flex;    /* centra el texto */
+  align-items:center;
+  justify-content:center;
+}
 
 /* Tabla */
 .tabla-actividades{overflow-x:auto;padding:20px;background:rgba(255,255,255,.85);border-radius:15px;box-shadow:0 4px 10px rgba(0,0,0,.1)}

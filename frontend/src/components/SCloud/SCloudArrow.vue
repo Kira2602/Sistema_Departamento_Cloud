@@ -142,12 +142,6 @@ export default {
           definition: 'Infraestructura tecnológica utilizada para gestionar la base de datos de dominios, verificar disponibilidad, procesar solicitudes y garantizar la conexión a Internet',
           hasSourceLink: true,
           hasDestinationLink: false
-        },
-        {
-          name: 'Unnamed Arrow / 4',
-          definition: '',
-          hasSourceLink: false,
-          hasDestinationLink: false
         }
       ],
       linkTables: [
@@ -285,13 +279,17 @@ export default {
 .arrow-table {
   margin-top: 20px;
   overflow-x: auto;
+  max-width: 100%;
+  width: 100%;
 }
 
 .arrows-table {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   border: 2px solid #000;
   font-size: 11px;
+  table-layout: fixed;
 }
 
 .arrows-table th {
@@ -302,6 +300,8 @@ export default {
   font-weight: bold;
   border: 2px solid #000;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .arrows-table td {
@@ -310,6 +310,8 @@ export default {
   padding: 6px 3px;
   border: 2px solid #000;
   vertical-align: top;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .arrows-table tr:nth-child(even) td {
@@ -327,12 +329,19 @@ export default {
 
 .arrow-definition {
   max-width: 200px;
+  min-width: 150px;
   word-wrap: break-word;
   line-height: 1.4;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .arrow-link {
   text-align: center;
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
 }
 
 .link-icon {
@@ -395,6 +404,17 @@ export default {
   .arrows-table td {
     padding: 4px 2px;
   }
+  
+  .arrow-definition {
+    max-width: 150px;
+    min-width: 120px;
+  }
+  
+  .arrow-link {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -413,7 +433,18 @@ export default {
   }
   
   .arrow-definition {
-    max-width: 150px;
+    max-width: 120px;
+    min-width: 100px;
+  }
+  
+  .arrow-link {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+  }
+  
+  .arrow-name {
+    min-width: 100px;
   }
 }
 </style>

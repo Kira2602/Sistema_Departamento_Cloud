@@ -310,9 +310,6 @@ import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
 
-// PDF dentro de src/pdf
-import BPMN_PDF from '@/pdf/BPMN_Cloud.pdf?url'
-
 const swal = Swal.mixin({
   background: '#fff7f7',
   color: '#3c507d',
@@ -352,11 +349,14 @@ export default {
       // Modal/Visor BPMN
       showBPMN: false,
       isViewerExpanded: false,
-      bpmnUrl: BPMN_PDF
+
+      // ✅ Nueva ruta pública (sin import)
+      bpmnUrl: '/pdf/BPMN_Cloud.pdf'
     }
   },
   computed: {
     bpmnIframeSrc() {
+      // muestra el PDF con las herramientas activadas
       return `${this.bpmnUrl}#toolbar=1`
     },
     recursosFiltrados() {
@@ -412,7 +412,6 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.onKeydownEsc)
-    // por si queda abierto
     document.documentElement.classList.remove('modal-open')
   },
   methods: {
@@ -569,7 +568,6 @@ export default {
     openBPMNViewer() {
       this.activeTopAction = 'bpmn'
       this.showBPMN = true
-      // bloquear scroll del fondo
       document.documentElement.classList.add('modal-open')
       this.$nextTick(() => this.$refs.modalDialog?.focus())
     },

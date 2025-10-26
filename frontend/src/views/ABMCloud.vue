@@ -299,6 +299,7 @@
           <iframe
             class="modal-iframe"
             :src="bpmnIframeSrc"
+            sandbox="allow-scripts allow-same-origin allow-downloads"
             title="BPMN PDF Viewer"
           ></iframe>
         </div>

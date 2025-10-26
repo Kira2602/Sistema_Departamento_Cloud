@@ -262,44 +262,36 @@
       @guardar="onAgregarRecurso"
     />
 
-    <!-- ===== MODAL: VISOR BPMN ===== -->
-    <div
-      v-if="showBPMN"
-      class="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="bpmnModalTitle"
-      @click.self="closeBPMNViewer"
-    >
+    <!-- ===== MODAL: EDITOR BPMN ===== -->
       <div
-        class="modal-dialog"
-        :class="{ expanded: isViewerExpanded }"
-        ref="modalDialog"
-        tabindex="-1"
+        v-if="showBPMN"
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        @click.self="closeBPMNViewer"
       >
-        <div class="modal-toolbar">
-          <div class="modal-title">
-            <strong id="bpmnModalTitle">Diagrama BPMN</strong>
-            <span class="modal-subtitle">src/pdf/BPMN_Cloud.pdf</span>
+        <div
+          class="modal-dialog expanded"
+          ref="modalDialog"
+          tabindex="-1"
+        >
+          <div class="modal-toolbar">
+            <div class="modal-title">
+              <strong>Editor BPMN</strong>
+              <span class="modal-subtitle">/public/diagrams/cloud-default.bpmn</span>
+            </div>
+            <div class="modal-actions">
+              <button class="btn accion-btn ok" @click="saveBpmn">💾 Guardar</button>
+              <button class="btn accion-btn cancelar" @click="closeBPMNViewer">Cerrar</button>
+            </div>
           </div>
-          <div class="modal-actions">
-            <a class="btn accion-btn descargar-btn" :href="bpmnUrl" download>Descargar</a>
-            <button class="btn accion-btn ok" @click="toggleViewerSize">
-              {{ isViewerExpanded ? 'Contraer' : 'Expandir' }}
-            </button>
-            <button class="btn accion-btn cancelar" @click="closeBPMNViewer">Cerrar</button>
-          </div>
-        </div>
 
-        <div class="modal-body">
-          <iframe
-            class="modal-iframe"
-            :src="bpmnIframeSrc"
-            title="BPMN PDF Viewer"
-          ></iframe>
+          <div class="modal-body">
+            <!-- 📄 Este div es donde se renderiza el editor -->
+            <div id="bpmn-container" style="width:100%; height:100%; background:#fff;"></div>
+          </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -309,6 +301,9 @@ import NavbarComponent from '@/components/NavbarComponent.vue'
 import AgregarPopup from '@/components/AgregarPopup.vue'
 import { cloudService } from '@/services/cloudService.js'
 import { mapBackendToFrontend, mapFrontendToBackend } from '@/utils/fieldMapper.js'
+import BpmnModeler from 'bpmn-js/lib/Modeler'
+
+
 
 const swal = Swal.mixin({
   background: '#fff7f7',
@@ -565,11 +560,54 @@ export default {
       this.closeBPMNViewer()
       this.$router.push('/scloud')
     },
-    openBPMNViewer() {
+  async openBPMNViewer() {
       this.activeTopAction = 'bpmn'
-      const cardanitUrl = 'https://editor.cardanit.com/project/#/bpmn/35a46559-9b99-4600-a735-2123f68c82dd?view=design'
-      // Abre en nueva pestaña sin requerir login (si el proyecto es público)
-      window.open(cardanitUrl, '_blank', 'noopener,noreferrer')
+      this.showBPMN = true
+      document.documentElement.classList.add('modal-open')
+
+      await this.$nextTick()
+
+      if (!this.bpmnModeler) {
+        this.bpmnModeler = new BpmnModeler({
+          container: '#bpmn-container'
+        })
+      }
+
+      // Carga el BPMN desde public/diagrams
+      try {
+        const response = await fetch('/diagrams/cloud-default.bpmn')
+        const xml = await response.text()
+        await this.bpmnModeler.importXML(xml)
+        const canvas = this.bpmnModeler.get('canvas')
+        canvas.zoom('fit-viewport')
+      } catch (err) {
+        console.error('Error al cargar diagrama BPMN:', err)
+      }
+    },
+    async saveBpmn() {
+      if (!this.bpmnModeler) return
+      try {
+        const { xml } = await this.bpmnModeler.saveXML({ format: true })
+        const blob = new Blob([xml], { type: 'text/xml' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'cloud-default.bpmn'
+        a.click()
+        URL.revokeObjectURL(url)
+        Swal.fire({
+          icon: 'success',
+          title: 'Guardado exitoso',
+          text: 'El archivo BPMN se descargó correctamente.'
+        })
+      } catch (err) {
+        console.error(err)
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: 'No se pudo exportar el archivo BPMN.'
+        })
+      }
     },
     closeBPMNViewer() {
       this.showBPMN = false

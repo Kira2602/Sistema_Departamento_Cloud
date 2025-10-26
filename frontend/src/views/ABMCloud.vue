@@ -284,9 +284,6 @@
           </div>
           <!-- En la barra de acciones del modal -->
             <div class="modal-actions">
-              <button class="btn accion-btn descargar-btn" @click="downloadPDF">
-                Descargar
-              </button>
               <button class="btn accion-btn ok" @click="toggleViewerSize">
                 <span v-if="!isViewerExpanded">⤢ Pantalla completa</span>
                 <span v-else>🗕 Reducir vista</span>
@@ -429,36 +426,6 @@ export default {
         .replace(/\p{Diacritic}/gu, '')
         .toLowerCase()
         .trim()
-    },
-    async downloadPDF() {
-      try {
-        const pdfUrl = `${window.location.origin}${this.bpmnUrl}`;
-        const response = await fetch(pdfUrl, { mode: 'cors' });
-        if (!response.ok) throw new Error(`Archivo no encontrado en ${pdfUrl}`);
-
-        const blob = await response.blob();
-        const link = document.createElement('a');
-        link.href = window.URL.createObjectURL(blob);
-        link.download = 'BPMN_Cloud.pdf';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(link.href);
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Descarga iniciada',
-          text: 'El archivo BPMN_Cloud.pdf se está descargando.',
-          timer: 2000,
-          showConfirmButton: false
-        });
-      } catch (err) {
-        Swal.fire({
-          icon: 'error',
-          title: 'No se pudo descargar',
-          text: err.message
-        });
-      }
     },
 
     async loadRecursos() {
@@ -759,7 +726,6 @@ export default {
 .modal-title strong{ color:#2b3b57; }
 .modal-subtitle{ color:#6f737a; font-size:.8rem; }
 .modal-actions{ display:flex; gap:10px; align-items:center; }
-.descargar-btn{ background:#4f6281 !important; color:#fff !important; }
 .modal-body{ flex:1; background:#fff; }
 .modal-iframe{ width:100%; height:100%; border:0; display:block; }
 

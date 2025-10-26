@@ -282,13 +282,17 @@
             <strong id="bpmnModalTitle">Diagrama BPMN</strong>
             <span class="modal-subtitle">src/pdf/BPMN_Cloud.pdf</span>
           </div>
-          <div class="modal-actions">
-            <a class="btn accion-btn descargar-btn" :href="bpmnUrl" download>Descargar</a>
-            <button class="btn accion-btn ok" @click="toggleViewerSize">
-              {{ isViewerExpanded ? 'Contraer' : 'Expandir' }}
-            </button>
-            <button class="btn accion-btn cancelar" @click="closeBPMNViewer">Cerrar</button>
-          </div>
+          <!-- En la barra de acciones del modal -->
+            <div class="modal-actions">
+              <button class="btn accion-btn descargar-btn" @click="downloadPDF">
+                Descargar
+              </button>
+              <button class="btn accion-btn ok" @click="toggleViewerSize">
+                <span v-if="!isViewerExpanded">⤢ Pantalla completa</span>
+                <span v-else>🗕 Reducir vista</span>
+              </button>
+              <button class="btn accion-btn cancelar" @click="closeBPMNViewer">Cerrar</button>
+            </div>
         </div>
 
         <div class="modal-body">
@@ -416,6 +420,7 @@ export default {
     document.documentElement.classList.remove('modal-open')
   },
   methods: {
+    
     onlyDate(d) { const nd = new Date(d); nd.setHours(0,0,0,0); return nd },
     norm(str) {
       return String(str ?? '')
@@ -423,6 +428,27 @@ export default {
         .replace(/\p{Diacritic}/gu, '')
         .toLowerCase()
         .trim()
+    },
+    async downloadPDF() {
+      try {
+        const response = await fetch(this.bpmnUrl)
+        if (!response.ok) throw new Error('No se pudo descargar el PDF')
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'BPMN_Cloud.pdf'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        window.URL.revokeObjectURL(url)
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al descargar',
+          text: 'No se pudo descargar el PDF. Verifica que esté disponible en /public/pdf/'
+        })
+      }
     },
 
     async loadRecursos() {
@@ -580,6 +606,8 @@ export default {
     },
     toggleViewerSize() {
       this.isViewerExpanded = !this.isViewerExpanded
+      const backdrop = document.querySelector('.modal-backdrop')
+      backdrop?.classList.toggle('expanded', this.isViewerExpanded)
     },
     onKeydownEsc(e) {
       if (e.key === 'Escape' && this.showBPMN) this.closeBPMNViewer()
@@ -796,5 +824,18 @@ td.currency::before { content: none !important; }
   .filtros-head{ justify-content: flex-start; gap:8px; }
   .top-actions{ flex-wrap: wrap; }
   .modal-dialog{ width: 96vw; height: 88vh; }
+}
+.modal-dialog {
+  width: min(90vw, 1200px);
+  height: 80vh;
+  transition: all 0.35s ease-in-out;
+}
+.modal-dialog.expanded {
+  width: 96vw;
+  height: 92vh;
+  transform: scale(1.02); 
+}
+.modal-backdrop.expanded {
+  background: rgba(0, 0, 0, 0.75);
 }
 </style>

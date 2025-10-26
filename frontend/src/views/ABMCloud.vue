@@ -431,23 +431,32 @@ export default {
     },
     async downloadPDF() {
       try {
-        const response = await fetch(this.bpmnUrl)
-        if (!response.ok) throw new Error('No se pudo descargar el PDF')
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'BPMN_Cloud.pdf'
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        window.URL.revokeObjectURL(url)
+        const pdfUrl = `${window.location.origin}${this.bpmnUrl}`;
+        const response = await fetch(pdfUrl, { mode: 'cors' });
+        if (!response.ok) throw new Error(`Archivo no encontrado en ${pdfUrl}`);
+
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = 'BPMN_Cloud.pdf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(link.href);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Descarga iniciada',
+          text: 'El archivo BPMN_Cloud.pdf se está descargando.',
+          timer: 2000,
+          showConfirmButton: false
+        });
       } catch (err) {
         Swal.fire({
           icon: 'error',
-          title: 'Error al descargar',
-          text: 'No se pudo descargar el PDF. Verifica que esté disponible en /public/pdf/'
-        })
+          title: 'No se pudo descargar',
+          text: err.message
+        });
       }
     },
 

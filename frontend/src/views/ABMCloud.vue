@@ -567,9 +567,9 @@ export default {
     },
     openBPMNViewer() {
       this.activeTopAction = 'bpmn'
-      this.showBPMN = true
-      document.documentElement.classList.add('modal-open')
-      this.$nextTick(() => this.$refs.modalDialog?.focus())
+      const cardanitUrl = 'https://editor.cardanit.com/project/#/bpmn/35a46559-9b99-4600-a735-2123f68c82dd?view=design'
+      // Abre en nueva pestaña sin requerir login (si el proyecto es público)
+      window.open(cardanitUrl, '_blank', 'noopener,noreferrer')
     },
     closeBPMNViewer() {
       this.showBPMN = false

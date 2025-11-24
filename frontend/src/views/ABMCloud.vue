@@ -403,16 +403,23 @@ export default {
     totalPages() { return Math.max(1, Math.ceil(this.recursosFiltrados.length / this.pageSize)) }
   },
   async mounted() {
-    // Lottie
-    if (!customElements.get('dotlottie-player')) {
-      const s = document.createElement('script')
-      s.src = 'https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js'
-      document.head.appendChild(s)
-    }
-    // Esc para cerrar modal
-    window.addEventListener('keydown', this.onKeydownEsc)
-    await this.loadRecursos()
-  },
+  // Lottie
+  if (!customElements.get('dotlottie-player')) {
+    const s = document.createElement('script')
+    s.src = 'https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js'
+    document.head.appendChild(s)
+  }
+
+  // Esc para cerrar modal
+  window.addEventListener('keydown', this.onKeydownEsc)
+  await this.loadRecursos()
+
+  // ✅ Si viene con ?bpmn=1 en la URL, abrir directamente el visor BPMN
+  const q = this.$route?.query || {}
+  if (q.bpmn === '1' || q.bpmn === 'true') {
+    this.openBPMNViewer()
+  }
+},
   beforeUnmount() {
     window.removeEventListener('keydown', this.onKeydownEsc)
     document.documentElement.classList.remove('modal-open')

@@ -410,14 +410,17 @@ export default {
     document.head.appendChild(s)
   }
 
-  // Esc para cerrar modal
   window.addEventListener('keydown', this.onKeydownEsc)
   await this.loadRecursos()
 
-  // ✅ Si viene con ?bpmn=1 en la URL, abrir directamente el visor BPMN
   const q = this.$route?.query || {}
+
   if (q.bpmn === '1' || q.bpmn === 'true') {
     this.openBPMNViewer()
+  }
+
+  if (q.idef0 === '1' || q.idef0 === 'true') {
+    this.goToSCloud()   // ← hace this.$router.push('/scloud') ya dentro de la SPA
   }
 },
   beforeUnmount() {
